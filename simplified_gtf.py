@@ -1,10 +1,59 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
-from Count_correct import GTF_read
-from Tools import Utils
-import sys, time
+import GTF_read
+import sys, time, os
 import csv
 pd.set_option('display.width', 400)
+
+
+def Intersect(dataf1,dataf2,output='./Intersect',name='name',score=0,keep='all',r=0,join='loj',option=''):
+    intersect_output=output+'.temp.intersect.bed'
+    dataf_1_output=output+'.temp.1.bed'
+    dataf_2_output=output+'.temp.2.bed'
+    if score == 0:
+        dataf1['score']=0
+        dataf2['score']=0
+        score='score'
+    dataf1=dataf1[['chr','start','end',name,score,'strand']]
+    dataf2=dataf2[['chr','start','end',name,score,'strand']]
+
+    dataf1['start']=dataf1['start'].map(int)
+    dataf1['end']=dataf1['end'].map(int)
+    dataf2['start']=dataf2['start'].map(int)
+    dataf2['end']=dataf2['end'].map(int)
+    dataf1.to_csv(path_or_buf=dataf_1_output,
+                          index=False, sep='\t', header=False)
+    dataf2.to_csv(path_or_buf=dataf_2_output,
+                          index=False, sep='\t', header=False)
+    command= "bedtools intersect \
+    -a %s \
+    -b %s \
+    -s " \
+    %(dataf_1_output, dataf_2_output)
+    command+="-"+join+" "
+    if r > 0 :
+        command+= "-f %s -r " \
+        %(str(r))
+    if option != '':
+        command+= option
+    command+="| sed 's/\t\.\t/\tx\t/g' \
+    >  %s" \
+    %(intersect_output)
+    os.system(command)
+    Intersect_dataf=pd.read_csv(filepath_or_buffer=intersect_output,
+                       index_col=False, sep='\t', header=None,
+                         names=['chr','start','end',name,score,'strand',
+                                'dataf2_file','start_2','end_2',name+'_2','overlap','strand_2'])
+    del Intersect_dataf['dataf2_file'], Intersect_dataf['strand_2']
+    if keep=='name_only':
+        Intersect_dataf=Intersect_dataf[[name,name+'_2']]
+    command= "rm %s &&\
+    rm %s && \
+    rm %s" \
+    %(dataf_1_output, dataf_2_output, intersect_output)
+    os.system(command)
+    return Intersect_dataf
+
 
 def get_simplified_exons(dIntersect,dgene):
     """
@@ -145,7 +194,7 @@ def enlarge_gene_within(dgene_within,df_gtf,window):
     dexon_canonical=df_gtf[df_gtf.feature == 'exon'][['chr','start','end','strand','gene_id']]
     dexon_canonical=dexon_canonical.drop_duplicates()
     dexon_canonical=dexon_canonical[dexon_canonical['gene_id'].isin(dgene_within['gene_id'])==False]    #To keep only exons from other genes
-    dgene_within=Utils.Intersect(dgene_within,dexon_canonical,name='gene_id')
+    dgene_within=Intersect(dgene_within,dexon_canonical,name='gene_id')
     dgene_within=pd.merge(dgene_within,dgene_within_old[['gene_id','old_start','old_end']],how='left',on='gene_id')
     del dexon_canonical     #Just to free a bit of RAM...
 
@@ -217,7 +266,7 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Results
     if window != 1:
         dgene_within=enlarge_gene_within(dgene_within,df_gtf,window)
 
-    dIntersect=Utils.Intersect(dgene_big,dgene_within,name='gene_id')
+    dIntersect=Intersect(dgene_big,dgene_within,name='gene_id')
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
 
     #host_gene_list=list(dIntersect['gene_id'])
