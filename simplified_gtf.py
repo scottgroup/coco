@@ -249,10 +249,11 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
 
 
 
-def main(window=3, csvgtf_provided=False, gtf_file='/home/gabrielle/genome/hg38_87/human_ensembl_87.gtf'):
+def main(window=3, csvgtf_provided=True, gtf_file='/home/gabrielle/genome/hg38_87/human_ensembl_87.csv'):
 
     if csvgtf_provided == True:
-        df_gtf = pd.read_csv(gtf_file, sep='\t')
+        df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
+        df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     else:
         df_gtf=GTF_read.fetch_genes(gtf_file, feature_to_keep='all')
     dgene=df_gtf[df_gtf.feature == 'gene']
