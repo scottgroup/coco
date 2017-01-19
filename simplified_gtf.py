@@ -68,7 +68,6 @@ def get_simplified_exons(dIntersect,dgene):
     dIntersect_more_than_one=dIntersect_more_than_one.sort_values(by=['gene_id','gap_start'])
 
     ###For the genes that have only one gap, no iterative part, makes it much faster.
-    print('one gaps')
     dexon_one=dgene[dgene['gene_id'].isin(list(dIntersect_one['gene_id'])) == True]
     dexon_one=pd.merge(dexon_one,dIntersect_one,on=['chr','strand','gene_id'],how='left')
     dexon_one_1=dexon_one[['chr','gene_id','start','gap_start','strand']]
@@ -81,7 +80,6 @@ def get_simplified_exons(dIntersect,dgene):
     ###For the genes that have more than one gap, done in an iterative manner.
 
     dgene_host_more_than_one=dgene[dgene['gene_id'].isin(list(dIntersect_more_than_one['gene_id'])) == True]
-    print(len(dgene_host_more_than_one))
     dexon_two=pd.DataFrame(data={'chr':[],'gene_id':[],'gap_end':[],'end':[],'strand':[]})
     #print(dgene_host_more_than_one[dgene_host_more_than_one['gene_id']=='ENSG00000178971'][:1])
     for index,row in dgene_host_more_than_one.iterrows():
