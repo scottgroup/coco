@@ -249,7 +249,8 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
 
 
 
-def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf.FULL.csv'):
+def main(window=3, csvgtf_provided=False, gtf_file='/home/gabrielle/genome/hg38_87/human_ensembl_87.gtf'):
+
     if csvgtf_provided == True:
         df_gtf = pd.read_csv(gtf_file, sep='\t')
     else:
@@ -258,7 +259,7 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequenc
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
     dgene['chr']=dgene['chr'].map(str)
-    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA','snRNA']
+    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA']
     dgene_within=dgene[dgene['gene_biotype'].isin(biotypes_within) == True]
     dgene_big=dgene[dgene['gene_biotype'].isin(biotypes_within) == False]
     if window != 1:
