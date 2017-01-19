@@ -45,7 +45,9 @@ def fetch_genes(gtf_file,feature_to_keep='GTE'):
     #df_gtf=df_gtf[-500:]
     if feature_to_keep == 'GTE':
         keep=['gene','transcript','exon']
+        print(len(df_gtf))
         df_gtf = df_gtf[df_gtf.feature.isin(keep) == True]
+        print(len(df_gtf))
     elif feature_to_keep != 'all' and feature_to_keep != 'GTE':
         df_gtf = df_gtf[df_gtf.feature == feature_to_keep]
 
