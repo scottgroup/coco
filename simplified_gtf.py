@@ -245,12 +245,12 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
 def main(window=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf'):
     if csvgtf_provided == True:
         df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
-        df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     else:
         print('Building csv from gtf. (This may take a few minutes)')
         command="python3 %sgtf_to_csv.py -i %s -o %s -columns seqname source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype transcript_support_level" %((os.path.realpath(__file__).replace('simplified_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
         os.system(command)
         df_gtf = pd.read_csv(gtf_file.replace('.gtf','.csv'), dtype={'seqname':str})
+    df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
