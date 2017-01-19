@@ -261,7 +261,7 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequenc
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
     dgene['chr']=dgene['chr'].map(str)
-    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA']
+    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA','snRNA']
     dgene_within=dgene[dgene['gene_biotype'].isin(biotypes_within) == True]
     dgene_big=dgene[dgene['gene_biotype'].isin(biotypes_within) == False]
     if window != 1:
