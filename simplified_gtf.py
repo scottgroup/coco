@@ -1,7 +1,6 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
 pd.set_option('display.width', 400)
-import GTF_read
 import sys, time, os
 import csv
 
@@ -70,9 +69,7 @@ def get_simplified_exons(dIntersect,dgene):
 
     ###For the genes that have only one gap, no iterative part, makes it much faster.
     print('one gaps')
-    start = time.time()
     dexon_one=dgene[dgene['gene_id'].isin(list(dIntersect_one['gene_id'])) == True]
-    print(len(dexon_one))
     dexon_one=pd.merge(dexon_one,dIntersect_one,on=['chr','strand','gene_id'],how='left')
     dexon_one_1=dexon_one[['chr','gene_id','start','gap_start','strand']]
     dexon_one_1=dexon_one_1.rename(columns={'gap_start':'end'})
@@ -80,12 +77,9 @@ def get_simplified_exons(dIntersect,dgene):
     dexon_one_2=dexon_one_2.rename(columns={'gap_end':'start'})
     dexon_one=pd.concat([dexon_one_1,dexon_one_2])
     del dexon_one_1, dexon_one_2
-    end = time.time()
-    print(end - start)
 
     ###For the genes that have more than one gap, done in an iterative manner.
-    print('more gaps')
-    start = time.time()
+
     dgene_host_more_than_one=dgene[dgene['gene_id'].isin(list(dIntersect_more_than_one['gene_id'])) == True]
     print(len(dgene_host_more_than_one))
     dexon_two=pd.DataFrame(data={'chr':[],'gene_id':[],'gap_end':[],'end':[],'strand':[]})
@@ -97,8 +91,7 @@ def get_simplified_exons(dIntersect,dgene):
         gap_list_gap_starts=[row['start']]+[ value[1]+1 for value in gap_list ]
         dexon_temp=pd.DataFrame(data={'chr':row['chr'],'gene_id':row['gene_id'],'start':gap_list_gap_starts,'end':gap_list_gap_ends,'strand':row['strand']})
         dexon_two=pd.concat([dexon_two,dexon_temp])
-    end = time.time()
-    print(end - start)
+
 
     #Merging the exons from single and many gap(s) host genes
     dexon=pd.concat([dexon_one,dexon_two])
@@ -249,13 +242,16 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
 
 
 
-def main(window=3, csvgtf_provided=True, gtf_file='/home/gabrielle/genome/hg38_87/human_ensembl_87.csv'):
-
+def main(window=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf'):
     if csvgtf_provided == True:
         df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
         df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     else:
-        df_gtf=GTF_read.fetch_genes(gtf_file, feature_to_keep='all')
+        print('Building csv from gtf. (This may take a few minutes)')
+        command="python3 %sgtf_to_csv.py -i %s -o %s -columns chr source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype" %((os.path.realpath(__file__).replace('simplified_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
+        os.system(command)
+        df_gtf = pd.read_csv(gtf_file.replace('.gtf','.csv'), dtype={'seqname':str})
+        sys.exit()
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)

@@ -1,4 +1,4 @@
-#!/bin/env python2
+#!/bin/env python3
 
 """
 thanks to Kamil Slowikowski (https://github.com/slowkow)
