@@ -252,7 +252,7 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
 
 
 
-def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Results/Seq/hg38/FabDupSan_human_ensembl_83.gtf.FULL.csv'):
+def main(window=3, csvgtf_provided=True, gtf_file='/home/gabrielle/genome/hg38_87/human_ensembl_87.csv'):
     if csvgtf_provided == True:
         df_gtf = pd.read_csv(gtf_file, sep='\t')
     else:
@@ -284,7 +284,7 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Results
     dIntersect=pd.merge(dIntersect,dataf_dup, on='gene_id', how='left')
 
     dexon=get_simplified_exons(dIntersect,dgene)
-    dexon.to_csv(path_or_buf='/home/vincent/Desktop/Results/Seq/hg38/test_exon.csv',
+    dexon.to_csv(path_or_buf='/home/gabrielle/genome/hg38_87/human_ensembl_87_exon.csv',
                           index=False, sep='\t', header=True)
     gtf_file=gtf_file.replace('.csv','.Simplified_gap.gtf')
     if window > 1:
