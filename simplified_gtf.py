@@ -1,9 +1,9 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
+pd.set_option('display.width', 400)
 import GTF_read
 import sys, time, os
 import csv
-pd.set_option('display.width', 400)
 
 
 def Intersect(dataf1,dataf2,output='./Intersect',name='name',score=0,keep='all',r=0,join='loj',option=''):
