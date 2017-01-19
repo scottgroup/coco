@@ -127,21 +127,21 @@ def get_simplified_exons(dIntersect,dgene):
 def fix_positions(dgene_within):
     dgene_within_starts=dgene_within.copy(deep=True)
     dgene_within_starts=dgene_within_starts[dgene_within_starts['overlap'] != -1]
-    dgene_within_starts=dgene_within_starts[dgene_within_starts['end_2'] <= dgene_within_starts['old_start']]
+    dgene_within_starts=dgene_within_starts[dgene_within_starts['end_2'] <= dgene_within_starts['old_end']]
     dgene_within_starts=dgene_within_starts.sort_values(by=['gene_id','end_2'], ascending=[True,False])    #We want the overlaping exon with the biggest end at the top of the list
     dgene_within_starts=dgene_within_starts.drop_duplicates(subset=['gene_id']) #Drops all the overlapping exons but the one with biggest end for each gene
     dgene_within_starts['start']=dgene_within_starts['end_2']
+    dgene_within_starts.loc[dgene_within_starts['start']>dgene_within_starts['old_start'],'start']=dgene_within_starts['old_start']
     dgene_within_starts['fix']='starts'
     dgene_within_starts=dgene_within_starts[['gene_id','start','fix']]
-    # print(dgene_within_starts[dgene_within_starts['gene_id']=='ENSG00000275267'][:20])
-
 
     dgene_within_ends=dgene_within.copy(deep=True)
     dgene_within_ends=dgene_within_ends[dgene_within_ends['overlap'] != -1]
-    dgene_within_ends=dgene_within_ends[dgene_within_ends['start_2'] >= dgene_within_ends['old_end']]
+    dgene_within_ends=dgene_within_ends[dgene_within_ends['start_2'] >= dgene_within_ends['old_start']]
     dgene_within_ends=dgene_within_ends.sort_values(by=['gene_id','start_2'], ascending=[True,True])    #We want the overlaping exon with the smallest start at the top of the list
     dgene_within_ends=dgene_within_ends.drop_duplicates(subset=['gene_id']) #Drops all the overlapping exons but the one with smallest start for each gene
     dgene_within_ends['end']=dgene_within_ends['start_2']
+    dgene_within_ends.loc[dgene_within_ends['end']<dgene_within_ends['old_end'],'end']=dgene_within_ends['old_end']
     dgene_within_ends['fix']='ends'
     dgene_within_ends=dgene_within_ends[['gene_id','end','fix']]
 
@@ -162,7 +162,6 @@ def fix_positions(dgene_within):
     dgene_within_fix=dgene_within_fix.rename(columns={'start':'fixed_start','end':'fixed_end'})
     dgene_within_fix=dgene_within_fix.drop_duplicates()
 
-
     dgene_within_fix_start=dgene_within_fix[['gene_id','fixed_start']][:]
     dgene_within_fix_start=dgene_within_fix_start.sort_values(by=['gene_id','fixed_start'], ascending=[True,False]) #We want to keep the biggest fixed start
     dgene_within_fix_start=dgene_within_fix_start.drop_duplicates(subset='gene_id')
@@ -179,7 +178,6 @@ def fix_positions(dgene_within):
 
     dgene_within.loc[(dgene_within['fixed_start'].isnull() == False), 'start']=dgene_within['fixed_start']
     dgene_within.loc[(dgene_within['fixed_end'].isnull() == False), 'end']=dgene_within['fixed_end']
-
     del dgene_within['fixed_start'],dgene_within['fixed_end'],dgene_within['old_start'],dgene_within['old_end']
     return dgene_within
 
@@ -202,7 +200,6 @@ def enlarge_gene_within(dgene_within,df_gtf,window):
 
     dgene_within=fix_positions(dgene_within)
     dgene_within=pd.merge(dgene_within,dgene_within_old[['gene_id','source', 'feature', 'transcript_id', 'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype']],how='left',on='gene_id')
-
     return dgene_within
 
 
@@ -270,12 +267,9 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequenc
     dIntersect=Intersect(dgene_big,dgene_within,name='gene_id')
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
 
-    #host_gene_list=list(dIntersect['gene_id'])
-
     dIntersect=dIntersect.rename(columns={'start_2':'gap_start','end_2':'gap_end'})
     del dIntersect['gene_id_2'],dIntersect['overlap']
     dIntersect=dIntersect.drop_duplicates()
-
 
     dupplicate_serie=dIntersect.groupby(dIntersect['gene_id'],as_index=False).size()
     dupplicate_quants=list(dupplicate_serie.values)
@@ -286,8 +280,6 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequenc
 
     dexon=get_simplified_exons(dIntersect,dgene)
 
-    # dexon.to_csv(path_or_buf='/home/vincent/Desktop/Results/Seq/hg38/test_exon.csv',
-    #                       index=False, sep='\t', header=True)
     gtf_file=gtf_file.replace('.csv','.Simplified_gap.gtf')
     if window > 1:
         build_simplified_gtf(dgene,dexon,gtf_file,dgene_within)
