@@ -248,10 +248,9 @@ def main(window=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequen
         df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     else:
         print('Building csv from gtf. (This may take a few minutes)')
-        command="python3 %sgtf_to_csv.py -i %s -o %s -columns chr source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype" %((os.path.realpath(__file__).replace('simplified_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
+        command="python3 %sgtf_to_csv.py -i %s -o %s -columns chr source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype transcript_support_level" %((os.path.realpath(__file__).replace('simplified_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
         os.system(command)
         df_gtf = pd.read_csv(gtf_file.replace('.gtf','.csv'), dtype={'seqname':str})
-        sys.exit()
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
