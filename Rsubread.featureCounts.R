@@ -16,7 +16,7 @@ library(Rsubread)
 featureCounts=featureCounts(BAM, annot.ext=GTF, isGTFAnnotationFile=TRUE,
               GTF.featureType="exon",GTF.attrType="gene_id", countChimericFragments=FALSE,
               largestOverlap=TRUE, isPairedEnd=TRUE, useMetaFeatures=TRUE,
-              requireBothEndsMapped=TRUE,strandSpecific=1, autosort=FALSE, allowMultiOverlap=FALSE,
+              requireBothEndsMapped=TRUE,strandSpecific=1, minOverlap=10, autosort=FALSE, allowMultiOverlap=FALSE,
               nthreads=7, reportReads=TRUE, juncCounts=FALSE,fraction=FALSE,countMultiMappingReads=FALSE)
 
 head(featureCounts$counts)
