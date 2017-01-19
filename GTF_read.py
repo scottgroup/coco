@@ -45,7 +45,9 @@ def fetch_genes(gtf_file,feature_to_keep='GTE'):
     #df_gtf=df_gtf[-500:]
     if feature_to_keep == 'GTE':
         keep=['gene','transcript','exon']
+        print(len(df_gtf))
         df_gtf = df_gtf[df_gtf.feature.isin(keep) == True]
+        print(len(df_gtf))
     elif feature_to_keep != 'all' and feature_to_keep != 'GTE':
         df_gtf = df_gtf[df_gtf.feature == feature_to_keep]
 
@@ -62,7 +64,7 @@ def fetch_genes(gtf_file,feature_to_keep='GTE'):
 
 
 if __name__=='__main__':
-    gtf_file='/home/vincent/Desktop/Results/Seq/hg38/SNORD124.gtf'
+    gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf'
     #feature_to_keep='gene'
     df_gtf=fetch_genes(gtf_file)
     #print(df_gtf[:5])
@@ -78,7 +80,7 @@ if __name__=='__main__':
     dexon=dexon.drop_duplicates()
     del df_gtf['transcript_name'],df_gtf['transcript_biotype']
     df_gtf=pd.merge(df_gtf,dexon,how='left',on=['transcript_id'])
-    df_gtf.to_csv(path_or_buf='/home/vincent/Desktop/Results/Seq/hg38/SNORD124.gtf.FULL.csv',
+    df_gtf.to_csv(path_or_buf='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf.FULL.csv',
                         index=False, sep='\t', header=True)
     # print(df_gtf[:5])
 

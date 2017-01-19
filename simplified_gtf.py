@@ -66,6 +66,7 @@ def get_simplified_exons(dIntersect,dgene):
     dIntersect_one=dIntersect_one[['chr','gene_id','gap_start','gap_end','strand']]
     dIntersect_more_than_one=dIntersect[dIntersect['count'] >= 1]
     dIntersect_more_than_one=dIntersect_more_than_one[['chr','gene_id','gap_start','gap_end','strand']]
+    dIntersect_more_than_one=dIntersect_more_than_one.sort_values(by=['gene_id','gap_start'])
 
     ###For the genes that have only one gap, no iterative part, makes it much faster.
     print('one gaps')
@@ -88,6 +89,7 @@ def get_simplified_exons(dIntersect,dgene):
     dgene_host_more_than_one=dgene[dgene['gene_id'].isin(list(dIntersect_more_than_one['gene_id'])) == True]
     print(len(dgene_host_more_than_one))
     dexon_two=pd.DataFrame(data={'chr':[],'gene_id':[],'gap_end':[],'end':[],'strand':[]})
+    #print(dgene_host_more_than_one[dgene_host_more_than_one['gene_id']=='ENSG00000178971'][:1])
     for index,row in dgene_host_more_than_one.iterrows():
         dgene_temp=dIntersect_more_than_one[dIntersect_more_than_one['gene_id'] == row['gene_id']]
         gap_list=list(zip(dgene_temp['gap_start'].map(int), dgene_temp['gap_end'].map(int)))
@@ -245,14 +247,12 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
     dgene=dgene[['chr', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame','attribute']]
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
-    dgene['chr']=dgene['chr'].map(str)
-    dgene['chr']=dgene['chr'].str.rstrip('.0')
     dgene.to_csv(path_or_buf=output,
                           index=False, sep='\t', header=False, quoting=csv.QUOTE_NONE)
 
 
 
-def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Results/Seq/hg38/FabDupSan_human_ensembl_83.gtf.FULL.csv'):
+def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf.FULL.csv'):
     if csvgtf_provided == True:
         df_gtf = pd.read_csv(gtf_file, sep='\t')
     else:
@@ -260,6 +260,7 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Results
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
+    dgene['chr']=dgene['chr'].map(str)
     biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA']
     dgene_within=dgene[dgene['gene_biotype'].isin(biotypes_within) == True]
     dgene_big=dgene[dgene['gene_biotype'].isin(biotypes_within) == False]
@@ -284,8 +285,9 @@ def main(window=3, csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Results
     dIntersect=pd.merge(dIntersect,dataf_dup, on='gene_id', how='left')
 
     dexon=get_simplified_exons(dIntersect,dgene)
-    dexon.to_csv(path_or_buf='/home/vincent/Desktop/Results/Seq/hg38/test_exon.csv',
-                          index=False, sep='\t', header=True)
+
+    # dexon.to_csv(path_or_buf='/home/vincent/Desktop/Results/Seq/hg38/test_exon.csv',
+    #                       index=False, sep='\t', header=True)
     gtf_file=gtf_file.replace('.csv','.Simplified_gap.gtf')
     if window > 1:
         build_simplified_gtf(dgene,dexon,gtf_file,dgene_within)
