@@ -174,13 +174,13 @@ def fix_positions(dgene_within):
 
 
 
-def enlarge_gene_within(dgene_within,df_gtf,window):
+def enlarge_gene_within(dgene_within,df_gtf,size_factor):
     dgene_within_old=dgene_within.copy(deep=True)
     dgene_within_old['old_start']=dgene_within_old['start']
     dgene_within_old['old_end']=dgene_within_old['end']
     dgene_within['length']=dgene_within['end']-dgene_within['start']
-    dgene_within['start']=dgene_within['start']-(dgene_within['length']*(window-1)/2).round(0)
-    dgene_within['end']=dgene_within['end']+(dgene_within['length']*(window-1)/2).round(0)
+    dgene_within['start']=dgene_within['start']-(dgene_within['length']*(size_factor-1)/2).round(0)
+    dgene_within['end']=dgene_within['end']+(dgene_within['length']*(size_factor-1)/2).round(0)
 
     dexon_canonical=df_gtf[df_gtf.feature == 'exon'][['chr','start','end','strand','gene_id']]
     dexon_canonical=dexon_canonical.drop_duplicates()
@@ -240,14 +240,26 @@ def build_simplified_gtf(dgene,dexon_overlap,output,dgene_within=None):
 
 
 
-def main(window=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf'):
-    if csvgtf_provided == True:
-        df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
-    else:
+def main(size_factor=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf'):
+    """
+    Produces a simplified .gtf with only one transcript per gene.
+    The unique transcript has holes (introns) where smaller genes are included within the coordinates of the host gene (ex: a snoRNA within a host gene).
+    The introns corresponding to genes included within host genes and those former genes can be increased in size (see size_factor).
+    :param size_factor: Factor by which the size of the genes of biotypes considered as "within host genes" should be increased (ex: 3 = 300% the size)
+                        NOTE: if the increased gene coordinates window overlaps any exon from its host genes, the window will be shrunk so as to not overlap the exon.
+                        If the gene is completely within an exon of its host genes, it will keep its original coordinates.
+    :param csvgtf_provided: If False, will begin by transforming the .gtf in a .csv file to be used. If True, takes the .csv produced with a .gtf as input. False by default.
+    :param gtf_file: the original gtf file. if csvgtf == True, a .csv file corresponding to the gtf file should be given instead.
+    :output: a simplified .gtf file to use with Rsubread
+    """
+    if csvgtf_provided == False:
         print('Building csv from gtf. (This may take a few minutes)')
         command="python3 %sgtf_to_csv.py -i %s -o %s -columns seqname source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype transcript_support_level" %((os.path.realpath(__file__).replace('simplified_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
         os.system(command)
-        df_gtf = pd.read_csv(gtf_file.replace('.gtf','.csv'), dtype={'seqname':str})
+        print('-------------')
+        gtf_file=gtf_file.replace('.gtf','.csv')
+    print('Building simplified gtf.')
+    df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
     df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
@@ -256,8 +268,8 @@ def main(window=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequen
     biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA']
     dgene_within=dgene[dgene['gene_biotype'].isin(biotypes_within) == True]
     dgene_big=dgene[dgene['gene_biotype'].isin(biotypes_within) == False]
-    if window != 1:
-        dgene_within=enlarge_gene_within(dgene_within,df_gtf,window)
+    if size_factor != 1:
+        dgene_within=enlarge_gene_within(dgene_within,df_gtf,size_factor)
 
     dIntersect=Intersect(dgene_big,dgene_within,name='gene_id')
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
@@ -275,8 +287,8 @@ def main(window=3, csvgtf_provided=False, gtf_file='/home/vincent/Desktop/Sequen
 
     dexon=get_simplified_exons(dIntersect,dgene)
 
-    gtf_file=gtf_file.replace('.csv','.Simplified_gap.gtf')
-    if window > 1:
+    gtf_file=gtf_file.replace('.csv','.Simplified_gap'+str(size_factor)+'.gtf')
+    if size_factor > 1:
         build_simplified_gtf(dgene,dexon,gtf_file,dgene_within)
     else:
         build_simplified_gtf(dgene,dexon,gtf_file)
