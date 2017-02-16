@@ -209,10 +209,10 @@ def main(csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequencing/Method
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
     dgene['chr']=dgene['chr'].map(str)
-    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA', '7SK', '7SL']
-    dgene=make_group_biotype(dgene)
-    dgene_within=dgene[dgene['gene_biotype_group'].isin(biotypes_within) == True]
-    dgene_big=dgene[dgene['gene_biotype_group'].isin(biotypes_within) == False]
+    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA']
+    #dgene=make_group_biotype(dgene)
+    dgene_within=dgene[dgene['gene_biotype'].isin(biotypes_within) == True]
+    dgene_big=dgene[dgene['gene_biotype'].isin(biotypes_within) == False]
     dexon_big=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_big['gene_id'])==True)]
     dexon_big['exon_id']=dexon_big['transcript_id']+'.'+dexon_big['exon_number'].map(int).map(str)
     dexon_small=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_big['gene_id'])==False)]
