@@ -1,4 +1,4 @@
 *~
 *.pyc
 .idea/*
-*_old.py
+*/old/*

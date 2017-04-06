@@ -23,8 +23,8 @@ def Intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,ke
         dataf1['score']=0
         dataf2['score']=0
         score='score'
-    dataf1=dataf1[['chr','start','end',name[0],score,'strand']]
-    dataf2=dataf2[['chr','start','end',name[1],score,'strand']]
+    dataf1=dataf1[['seqname','start','end',name[0],score,'strand']]
+    dataf2=dataf2[['seqname','start','end',name[1],score,'strand']]
 
     dataf1['start']=dataf1['start'].map(int)
     dataf1['end']=dataf1['end'].map(int)
@@ -51,7 +51,7 @@ def Intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,ke
     os.system(command)
     Intersect_dataf=pd.read_csv(filepath_or_buffer=intersect_output,
                        index_col=False, sep='\t', header=None,
-                         names=['chr','start','end',name[0],score,'strand',
+                         names=['seqname','start','end',name[0],score,'strand',
                                 'dataf2_file','start_2','end_2',name[1],'overlap','strand_2'])
     del Intersect_dataf['dataf2_file'], Intersect_dataf['strand_2']
     if keep=='name_only':
@@ -117,11 +117,11 @@ def drill_an_exon(dIntersect,dexon_fix):
         gap_list=sorted(unique_list(gap_list), key=lambda tup: tup[0])
         gap_list_gap_ends=[ value[0]-1 for value in gap_list ]+[row['end']]
         gap_list_gap_starts=[row['start']]+[ value[1]+1 for value in gap_list ]
-        dexon_temp=pd.DataFrame(data={'chr':row['chr'],'exon_id':row['exon_id'],'start':gap_list_gap_starts,'end':gap_list_gap_ends,'strand':row['strand'],'source':row['source'],'feature':row['feature'],'gene_id':row['gene_id'],'transcript_id':row['transcript_id'],'exon_number':row['exon_number'],'gene_name':row['gene_name'],'gene_biotype':row['gene_biotype'],'transcript_name':row['transcript_name'],'transcript_biotype':row['transcript_biotype'],'transcript_support_level':row['transcript_support_level'],'score':row['score']})
+        dexon_temp=pd.DataFrame(data={'seqname':row['seqname'],'exon_id':row['exon_id'],'start':gap_list_gap_starts,'end':gap_list_gap_ends,'strand':row['strand'],'source':row['source'],'feature':row['feature'],'gene_id':row['gene_id'],'transcript_id':row['transcript_id'],'exon_number':row['exon_number'],'gene_name':row['gene_name'],'gene_biotype':row['gene_biotype'],'transcript_name':row['transcript_name'],'transcript_biotype':row['transcript_biotype'],'transcript_support_level':row['transcript_support_level'],'score':row['score']})
         dexon_more_than_one_fixed_exons=pd.concat([dexon_more_than_one_fixed_exons,dexon_temp])
         dexon_more_than_one_fixed_exons=dexon_more_than_one_fixed_exons[dexon_more_than_one_fixed_exons['end']-dexon_more_than_one_fixed_exons['start']>1]
     dexon_more_than_one_fixed_exons=dexon_more_than_one_fixed_exons[dexon_more_than_one_fixed_exons['end']-dexon_more_than_one_fixed_exons['start']>1]
-    dexon_slice=dexon_slice[['chr','start','end','exon_id','strand']]
+    dexon_slice=dexon_slice[['seqname','start','end','exon_id','strand']]
     dexon_fix=dexon_fix[['gene_id', 'transcript_id', 'exon_number', 'feature', 'gene_name', 'gene_biotype', 'source', 'transcript_name', 'transcript_biotype', 'transcript_support_level', 'exon_id', 'score']]
     dexon_slice=pd.merge(dexon_slice,dexon_fix,how='left',on='exon_id')
     dexon_slice=pd.concat([dexon_slice,dexon_more_than_one_fixed_exons])
@@ -172,7 +172,7 @@ def fix_gene_and_transcript_size(df_gtf,dexon):
 
 def build_gapped_gtf(df_gtf,dexon,output):
     df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
-    print('Building gapped gtf...')
+    print('Building CorrectAnnotation gtf...')
     df_gtf=pd.concat([df_gtf,dexon])
     df_gtf['exon_number']=df_gtf['exon_number'].fillna(value=0,axis=0).map(int).map(str)
     df_gtf.loc[df_gtf['feature'] == 'exon','feature']='zexon'   #Makes proper gtf sorting simpler
@@ -185,22 +185,25 @@ def build_gapped_gtf(df_gtf,dexon,output):
     df_gtf.loc[df_gtf['feature'] == 'exon','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; exon_number "'+df_gtf['exon_number']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; exon_id "'+df_gtf['exon_id']+'";'
     df_gtf['score']='.'
     df_gtf['frame']='.'
-    df_gtf=df_gtf[['chr', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame','attribute']]
+    df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame','attribute']]
     df_gtf.to_csv(path_or_buf=output,
                           index=False, sep='\t', header=False, quoting=csv.QUOTE_NONE)
     print('All done!')
 
 
 
-def main(csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.csv'):
-    if csvgtf_provided == False:
+def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRNA','snRNA'),output_gtf='None'):
+    if gtf_file.endswith('.gtf')==True:
         print('Building csv from gtf. (This may take a few minutes)')
         command="python3 %sgtf_to_csv.py -i %s -o %s -columns seqname source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype transcript_support_level" %((os.path.realpath(__file__).replace('gapped_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
         os.system(command)
         print('-------------')
         gtf_file=gtf_file.replace('.gtf','.csv')
+    else:
+        print('Annotation file:',gtf_file)
+        print('error: Wrong annotation format. Only .gtf files are accepted')
+        sys.exit(1)
     df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
-    df_gtf = df_gtf.rename(columns={'seqname':'chr'})
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
     #df_gtf.loc[df_gtf['transcript_support_level'].isnull()==True,'transcript_support_level']=df_gtf['transcript_support_level']
@@ -208,29 +211,30 @@ def main(csvgtf_provided=True, gtf_file='/home/vincent/Desktop/Sequencing/Method
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
-    dgene['chr']=dgene['chr'].map(str)
-    biotypes_within=['snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA']
+    dgene['seqname']=dgene['seqname'].map(str)
     #dgene=make_group_biotype(dgene)
-    dgene_within=dgene[dgene['gene_biotype'].isin(biotypes_within) == True]
-    dgene_big=dgene[dgene['gene_biotype'].isin(biotypes_within) == False]
-    dexon_big=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_big['gene_id'])==True)]
-    dexon_big['exon_id']=dexon_big['transcript_id']+'.'+dexon_big['exon_number'].map(int).map(str)
-    dexon_small=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_big['gene_id'])==False)]
-    dexon_small['exon_id']=dexon_small['transcript_id']+'.'+dexon_small['exon_number'].map(int).map(str)
-    dIntersect=Intersect(dexon_big,dgene_within,name=('exon_id','gene_id'))
+    dgene_embedded=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == True]
+    dgene_host=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == False]
+
+    dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
+    dexon_host['exon_id']=dexon_host['transcript_id']+'.'+dexon_host['exon_number'].map(int).map(str)
+    dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
+    dexon_not_host['exon_id']=dexon_not_host['transcript_id']+'.'+dexon_not_host['exon_number'].map(int).map(str)
+    dIntersect=Intersect(dexon_host,dgene_embedded,name=('exon_id','gene_id'))
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
     del dIntersect['overlap']
-
-    dexon_slice=drill_an_exon(dIntersect,dexon_big)
-    dexon_big=dexon_big[dexon_big['exon_id'].isin(dIntersect['exon_id']) == False]
-    dexon_big=pd.concat([dexon_big,dexon_slice])
-    dexon=pd.concat([dexon_big,dexon_small])
+    dexon_slice=drill_an_exon(dIntersect,dexon_host)
+    dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
+    dexon_host=pd.concat([dexon_host,dexon_slice])
+    dexon=pd.concat([dexon_host,dexon_not_host])
     dexon=fix_exon_number(dexon)
-    gtf_file=gtf_file.replace('.csv','.CoCo_gap.gtf')
-    build_gapped_gtf(df_gtf,dexon,gtf_file)
-
-
-
+    if output_gtf=='None':
+        output_gtf=gtf_file.replace('.csv','.CorrectAnnotation.gtf')
+    build_gapped_gtf(df_gtf,dexon,output_gtf)
 
 if __name__=='__main__':
-    main()
+    if len(sys.argv)>2:
+        CorrectAnnotation(gtf_file=sys.argv[1],output_gtf=sys.argv[2])
+    else:
+        print('error: Not enough arguments!')
+        sys.exit(1)

@@ -71,9 +71,9 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-* **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction.* - [PurpleBooth](https://github.com/PurpleBooth)
-* **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.* - [PurpleBooth](https://github.com/PurpleBooth)
-* **Michelle Scott** - *Mastermind of the project and awesome PI* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction.
+* **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.* - [boiv2803](http://gitlabscottgroup.med.usherbrooke.ca/u/boiv2803)
+* **Michelle Scott** - *Mastermind of the project and awesome PI* - [scottgroup](http://scottgroup.med.usherbrooke.ca/)
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
