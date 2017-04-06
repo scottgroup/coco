@@ -37,15 +37,15 @@ End with an example of getting some data out of the system or using it for a lit
 
 ### Usage
 
-Once the package is downloaded and the CoCo/bin/ path is added to your PATH environment variable, you can simply use CoCo by typing "CoCo <args>" in your terminal.
+Once the package is downloaded and the CoCo/bin/ path is added to your PATH environment variable, CoCo can be called directly from your terminal.
 CoCo is divided into two main run modes: CorrectAnnotation and CorrectCount, and one accessory mode: CorrectBedgraph.
 
-##CorrectAnnotation
+## CorrectAnnotation
 CorrectAnnotation should be used first in order to produce a modified annotation file from an input gene transfer format (.gtf) annotation obtained from Ensembl.
 The corrected annotation consists in a version of the original annotation where exon portions of host genes that overlap embedded genes are removed.
 The considered embedded gene biotypes are: snoRNA, scaRNA, snRNA, miRNA and tRNA. Therefore, the original annotation file should have a "gene_biotype" entry for each genes (see image below).
 
-![alt tag](https://s-media-cache-ak0.pinimg.com/originals/f9/25/e1/f925e13343ffc8726316f519b3619424.png)
+![alt tag](http://gitlabscottgroup.med.usherbrooke.ca/scott-group/coco.git/ressources/CorrectAnnotation.PNG)
 
 This might not be included into the annotation files from other sources than Ensembl and so we recommend that you get the annotation from Ensembl.
 
