@@ -45,7 +45,7 @@ CorrectAnnotation should be used first in order to produce a modified annotation
 The corrected annotation consists in a version of the original annotation where exon portions of host genes that overlap embedded genes are removed.
 The considered embedded gene biotypes are: snoRNA, scaRNA, snRNA, miRNA and tRNA. Therefore, the original annotation file should have a "gene_biotype" entry for each genes (see image below).
 
-![alt tag](http://gitlabscottgroup.med.usherbrooke.ca/scott-group/coco.git/ressources/CorrectAnnotation.PNG)
+![alt tag](ressources/CorrectAnnotation.PNG)
 
 This might not be included into the annotation files from other sources than Ensembl and so we recommend that you get the annotation from Ensembl.
 
