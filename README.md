@@ -13,6 +13,7 @@ These instructions will get you a copy of the project up and running on your loc
 Here are the tools that must be installed for CoCo to work:
 * [Subread](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by CorrectCount to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
 * [BEDtools](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by CorrectAnnotation and for *genomecov* which is used by CorrectBedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
+* [samtools](http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
 CoCo also uses some python3 packages:
@@ -41,7 +42,7 @@ And then you're pretty much done! You should have access to the **coco** command
  ```
 coco --help
 >>	CoCo: Count Corrector for embedded and multi-mapped genes.
-	Version: 1.0.0
+	Version: 0.1.0
 	Usage: CoCo <Run mode> <Run mode specific arguments>
 
 	Run modes:
@@ -57,46 +58,20 @@ coco --help
 ## Usage
 
 Once the repository is downloaded and its /bin/ path is added to your PATH environment variable, CoCo can be called directly from your terminal.
-CoCo is divided into two main run modes: **CorrectAnnotation** and **CorrectCount**, and one accessory mode: **CorrectBedgraph**.
+CoCo is divided into two main run modes: **CorrectAnnotation** and **CorrectCount**, and one accessory mode: **CorrectBedgraph**, each with their own parameters, and can be used as such:
 
-### CorrectAnnotation
-CorrectAnnotation should be used first in order to produce a modified annotation file from an input gene transfer format (.gtf) annotation file obtained from **Ensembl**.
-Basic usage:
 ```
-coco CorrectAnnotation path/to/your/annotation/hg38_annotation.gtf
+coco [run mode] [args]
 ```
 
-The corrected annotation consists in a version of the original annotation where exon portions of host genes that overlap embedded genes are removed (see image below).
+You can also run it directly from the bin:
 
-![alt tag](ressources/CorrectAnnotation.PNG)
-
-The considered embedded gene biotypes are: snoRNA, scaRNA, snRNA, miRNA and tRNA. Therefore, **the original annotation file should have a "gene_biotype" entry for each genes**. This might not be included into the annotation files from other sources than Ensembl and so **we recommend that you get the annotation from Ensembl**.
-
-### CorrectCount
-
-CorrectCount is used to produce the corrected read counts per gene as well as their count per million (CPM) and approximated transcripts per million (TPM) values. This step takes as input your alignment file in .bam format and the modified (.gtf) annotation file produced by CorrectAnnotation although it will work with an original annotation file as well; this allows the user to choose whether or not to do the correction for embedded genes.
-Basic usage:
 ```
-coco CorrectCount path/to/your/annotation/hg38_annotation.gtf
+cd path/to/coco/bin/
+./coco [run mode] [args]
 ```
 
-The user can also specify with the count_type parameter whether to use only uniquely mapped reads, only multi-mapped reads or both uniquely and multi mapped reads (default to both) to evaluate the read count per gene.
-
-Results will be output to the specified output path.
-
-
-### CorrectBedgraph
-
-CorrectBedgraph is used to produce bedgraph files from a paired-end dataset that removes the over estimation of read alignment count for a given genomic position when its forward and reverse read tend to overlap alot. This is very often the case with small RNA such as snoRNA that the forward read totally reverse read from its pair. The genomecov --split method would then count the read pairs as two count rather than a single one because it considers reads from pairs seperately. Althought genomecov can be used in a non-split fashion, this brings about the problem that read pairs are considered as fragments, and so, if two paired reads are aligned on different exons, the whole region between the two reads (meaning the entire introns) has its score raised as well as the two regions span by the reads themselves.
-
-CorrectBedgraph brings about the best of both worlds as it consideres reads seperately but will not double the score if the read from a pair overlap with one another. See the figure below for a visual explanation.
-
-![alt tag](ressources/CorrectBedgraph.PNG)
-
-Basic usage:
-```
-coco CorrectBedgraph path/to/your/bam/alignment.bam
-```
+For more information about the usage of every run modes, please refer to the [MANUAL.md](MANUAL.md).
 
 ## Running the tests
 
@@ -119,13 +94,6 @@ Explain what these tests test and why
 Give an example
 ```
 
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
 ## Authors
 
 * **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction.*
@@ -136,12 +104,31 @@ See also the list of [contributors](https://github.com/your/project/contributors
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+For more information about the GNU General Public License, see <http://www.gnu.org/licenses/>.
+
+## How to cite us
+
+Scientific results produced using CoCo shall acknowledge its use. Please cite as 
+
+       ---
+
 
 ## Acknowledgments
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
 * Many thanks to Jean-Michel Garrant as well for his general wisdom.
+* Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py and gtf_to_csv.py scripts that are used by CorrectAnnotation.
+
 
 ## References
 **CoCo**:
@@ -149,4 +136,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 **featureCounts** Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-30.
 
 **bedTools**: Quinlan AR, Hall IM. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinformatics. 2010;26(6):841-2.
+
+**samtools** Li H, Handsaker B, Wysoker A, et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009;25(16):2078-9.
 

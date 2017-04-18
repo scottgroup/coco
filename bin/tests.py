@@ -1,0 +1,94 @@
+import os,sys
+import subprocess
+import shutil
+
+def check_dependencies():
+    dependencies=['samtools','bedtools','featureCounts']
+    errors=[]
+    for dependency in dependencies:
+        exist=shutil.which(dependency)
+        if exist==None:
+            errors.append(dependency)
+    if len(errors) != 0:
+        print('error: %s is/are not installed. Please read the README.md file '
+              'for more information about the prerequisites of CoCo and help for their installation.' %(', '.join(errors)))
+        sys.exit(1)
+
+
+def check_bam(bam_file):
+    textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
+    is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
+    if is_binary_string(open(bam_file, 'rb').read(1)) == False:
+       print('error: File is not binary. Please use a binary alignment map (.bam) format as input.')
+       sys.exit(1)
+    command="samtools view %s | head -n1" %(bam_file)
+    view=subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
+    communicate=view.communicate()
+    line=str(communicate[0],'utf-8')
+    if line == '':
+        print('error: samtools view cannot proccess provided bam file %s , a proper bam file is required.' %(bam_file))
+        sys.exit(1)
+    else:
+        linesplit=line.split('\t')
+        if len(linesplit) < 11:
+            print("error: entries from bam file are incomplete. the file provided should have at least 11 fields, only %d fields in the bam's first entry." %(len(linesplit)))
+            sys.exit(1)
+
+
+def check_gtf(gtf_file,check_gene_biotype=False):
+    with open(gtf_file,'r') as f:
+        for line in f:
+            if line.startswith('#')==False:
+                if line.split('\t')[2] == 'gene':
+                    gene_test_line=line
+                elif line.split('\t')[2] == 'transcript':
+                    transcript_test_line=line
+                elif line.split('\t')[2] == 'exon':
+                    exon_test_line=line
+                try:
+                    gene_test_line
+                    transcript_test_line
+                    exon_test_line
+                except:
+                    pass
+                else:
+                    break
+    #Check if any gene, transcript and exon entry was found in the gtf file.
+    try:
+        gene_test_line
+    except:
+        print('error: bad annotation format, no gene entry. Please use a gene transfer format (.gtf) as input annotation.')
+        sys.exit(1)
+    try:
+        transcript_test_line
+    except:
+        print('error: bad annotation format, no transcript entry. Please use a gene transfer format (.gtf) as input annotation.')
+        sys.exit(1)
+    try:
+        exon_test_line
+    except:
+        print('error: bad annotation format, no exon entry. Please use a gene transfer format (.gtf) as input annotation.')
+        sys.exit(1)
+
+    #Check if there is any gene_biotype entry
+    if check_gene_biotype:
+        if 'gene_biotype' not in gene_test_line:
+            print('error: There is no "gene_biotype" entry for genes. Please use a gene transfer format (.gtf) annotation file obtained from Ensembl to correct this.')
+            sys.exit(1)
+    if 'gene_id' not in gene_test_line:
+            print('error: There is no "gene_id" entry for genes. Please use a gene transfer format (.gtf) annotation file obtained from Ensembl to correct this.')
+            sys.exit(1)
+
+
+def check_output(output):
+    output_path='/'.join(output.rstrip('/').split('/')[:-1])
+    cwd = os.getcwd()
+    if os.path.isdir(output_path)==False:
+        try:
+            if os.path.isdir(output_path)== False:
+                if os.path.isdir(cwd+'/'+output_path)== False:
+                    sys.exit(1)
+        except:
+            print("error: path to output does not exist: %s. Please specify a valid output path." %(output))
+            sys.exit(1)
+

@@ -1,8 +1,9 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
 pd.set_option('display.width', 400)
-import sys, time, os
+import sys, os
 import csv
+from GTF import dataframe
 
 def getOverlap(a, b):
     if max(0, min(a[1], b[1]) - max(a[0], b[0])) > 0:
@@ -192,18 +193,24 @@ def build_gapped_gtf(df_gtf,dexon,output):
 
 
 
-def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRNA','snRNA'),output_gtf='None'):
+def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRNA','snRNA')):
+    """
+    CorrectAnnotation builds a new gtf from the one provided, with holes on exons from genes that overlap the specified embedded biotypes.
+    Read the MANUAL.md for extensive description.
+    :param gtf_file: orifinal gtf file
+    :param biotypes_embedded: list of the embedded biotypes. Default: 'snoRNA','scaRNA','tRNA','miRNA' and 'snRNA'
+    :output: modified gtf file with the .CorrectAnnotation.gtf prefix.
+    """
     if gtf_file.endswith('.gtf')==True:
-        print('Building csv from gtf. (This may take a few minutes)')
-        command="python3 %sgtf_to_csv.py -i %s -o %s -columns seqname source feature start end strand gene_id transcript_id exon_number gene_name gene_biotype transcript_name transcript_biotype transcript_support_level" %((os.path.realpath(__file__).replace('gapped_gtf.py','')),gtf_file,gtf_file.replace('.gtf','.csv'))
-        os.system(command)
-        print('-------------')
-        gtf_file=gtf_file.replace('.gtf','.csv')
+        print('Reading gtf')
     else:
         print('Annotation file:',gtf_file)
         print('error: Wrong annotation format. Only .gtf files are accepted')
         sys.exit(1)
-    df_gtf = pd.read_csv(gtf_file, dtype={'seqname':str})
+    try:
+        df_gtf=dataframe(gtf_file)
+    except:
+        print("error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene transfer format (.gtf) and comes from Ensembl.")
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
     #df_gtf.loc[df_gtf['transcript_support_level'].isnull()==True,'transcript_support_level']=df_gtf['transcript_support_level']
@@ -228,13 +235,12 @@ def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRN
     dexon_host=pd.concat([dexon_host,dexon_slice])
     dexon=pd.concat([dexon_host,dexon_not_host])
     dexon=fix_exon_number(dexon)
-    if output_gtf=='None':
-        output_gtf=gtf_file.replace('.csv','.CorrectAnnotation.gtf')
+    output_gtf=gtf_file.replace('.gtf','.CorrectAnnotation.gtf')
     build_gapped_gtf(df_gtf,dexon,output_gtf)
 
 if __name__=='__main__':
-    if len(sys.argv)>2:
-        CorrectAnnotation(gtf_file=sys.argv[1],output_gtf=sys.argv[2])
+    if len(sys.argv)>1:
+        CorrectAnnotation(gtf_file=sys.argv[1])
     else:
         print('error: Not enough arguments!')
         sys.exit(1)
