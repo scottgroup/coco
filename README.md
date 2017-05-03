@@ -1,25 +1,33 @@
+<img style="float: left; width: 150px;" src="ressources/CoCoLogo.PNG" >
+
 # **CoCo**: Count Corrector for embedded and multi-mapped genes.
 
 CoCo is a pipeline designed to improve the evaluated abundances of embedded and multi-mapped genes from RNA-seq alignment data. CoCo is divided in two main parts which can be used together or seperately, depending on user's preferences. The first part being a correction of the gene annotation used by read assignment softwares such as featureCounts or HTSeq in order to correct the evaluated read counts for embedded genes such as snoRNA, that overlap features of their host gene's transcripts such as retained introns and exons. The second part of the correction distributes multi mapped reads in relation to the evaluated read counts obtained from single mapped reads.
 
 We've shown that the combination of these two corrections gives the best correlation of the evaluated gene abundance from RNAseq data with abundances evaluated from other methods such as qPCR.
 
-## Getting Started
+
+
+## **Getting Started**
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-### Prerequisites
+
+
+### **Prerequisites**
 
 Here are the tools that must be installed for CoCo to work:
-* [Subread](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by CorrectCount to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
-* [BEDtools](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by CorrectAnnotation and for *genomecov* which is used by CorrectBedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
-* [samtools](http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
+* [**Subread**](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by CorrectCount to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
+* [**BEDtools**](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by CorrectAnnotation and for *genomecov* which is used by CorrectBedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
+* [**samtools**](http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
 CoCo also uses some python3 packages:
-* [pandas](http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
+* [**pandas**](http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
 
-### Installing
+
+
+### **Installing**
 
 Installing CoCo is done in a few easy steps.
 
@@ -55,7 +63,9 @@ coco --help
 	For more info, please refer to the README file.
 ```
 
-## Usage
+
+
+## **Usage**
 
 Once the repository is downloaded and its /bin/ path is added to your PATH environment variable, CoCo can be called directly from your terminal.
 CoCo is divided into two main run modes: **CorrectAnnotation** and **CorrectCount**, and one accessory mode: **CorrectBedgraph**, each with their own parameters, and can be used as such:
@@ -71,30 +81,15 @@ cd path/to/coco/bin/
 ./coco [run mode] [args]
 ```
 
-For more information about the usage of every run modes, please refer to the [MANUAL.md](MANUAL.md).
+Here is how a user (you) can use the three CoCo modules to get to the desired output (whether it be the corrected gene expression values, the corrected paired-end bedgraph or both)
 
-## Running the tests
+<img src="ressources/CoCoPipeline.PNG" alt="CoCo Pipeline" style="width: 700px;"/>
 
-Explain how to run the automated tests for this system
+For detailed information about the usage of every run modes, please refer to the [**MANUAL.md**](MANUAL.md).
 
 
-### Break down into end to end tests
 
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Authors
+## **Authors**
 
 * **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction.*
 * **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.* - [boiv2803](http://gitlabscottgroup.med.usherbrooke.ca/u/boiv2803)
@@ -102,7 +97,9 @@ Give an example
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
-## License
+
+
+## **License**
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -116,21 +113,25 @@ GNU General Public License for more details.
 
 For more information about the GNU General Public License, see <http://www.gnu.org/licenses/>.
 
-## How to cite us
+
+
+## **How to cite us**
 
 Scientific results produced using CoCo shall acknowledge its use. Please cite as 
 
        ---
 
 
-## Acknowledgments
+
+## **Acknowledgments**
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
 * Many thanks to Jean-Michel Garrant as well for his general wisdom.
 * Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py and gtf_to_csv.py scripts that are used by CorrectAnnotation.
 
 
-## References
+
+## **References**
 **CoCo**:
 
 **featureCounts** Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-30.

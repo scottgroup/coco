@@ -10,7 +10,7 @@ __email__ = "Michelle.Scott@Usherbrooke.ca"
 import argparse
 import sys, os
 import tests
-from gapped_gtf import CorrectAnnotation
+import gapped_gtf
 
 parser = argparse.ArgumentParser()
 
