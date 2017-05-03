@@ -92,3 +92,20 @@ def check_output(output):
             print("error: path to output does not exist: %s. Please specify a valid output path." %(output))
             sys.exit(1)
 
+def check_unique_count(unique_counts):
+    with open(unique_counts) as f:
+        line = f.readline()
+        while line[0]=='#':
+            line = f.readline() #skips comment line
+        f.readline() #Skips header if there is one, otherwise, skips first line, which is fine
+        line = f.readline()
+        line=line.strip().split('\t')
+        if len(line) != 7:
+            print('Error: Wrong number of fields in unique_count matrix, seen %i, expected 7. Format should be: '
+                  'gene_id  seqname start   end strand  length  accumulation (separated by a tabulation)'%len(line))
+            sys.exit(1)
+        try :
+            float(line[6])
+        except ValueError:
+            print('Error: Last field should be a number')
+            sys.exit(1)
