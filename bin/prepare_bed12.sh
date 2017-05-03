@@ -13,6 +13,7 @@ if [ "True" = "${multi}" ]; then
 	samtools view -H $outpath/${bamfile}.bam > $outpath/${bamfile}_properpair.sorted.sam &&
 
 	# Sort file by name and HI tag to keep the right mates together
+	echo 'sorting'
 	sort -k1,1 -k13,13 $outpath/${bamfile}_properpair.sam >> $outpath/${bamfile}_properpair.sorted.sam &&
 
 	rm $outpath/${bamfile}_properpair.sam &&
@@ -29,6 +30,7 @@ elif [ "False" = "${multi}" ]; then
 	samtools view -b -f 0x2 $outpath/${bamfile}.bam > $outpath/${bamfile}_properpair.bam &&
 	
 	# Sort file by name
+	echo 'sorting'
 	samtools sort -o $outpath/${bamfile}_properpair.sorted.bam -n $outpath/${bamfile}_properpair.bam &&
 
 	rm $outpath/${bamfile}_properpair.bam 
@@ -42,7 +44,7 @@ fi &&
 
 
 # convert paired bam to split bed12
-
+echo 'converting bam to bed12'
 pairedBamToBed12 -i $outpath/${bamfile}_properpair.sorted.bam  > $outpath/${bamfile}.bed12 &&
 
 rm $outpath/${bamfile}_properpair.sorted.bam &&

@@ -14,6 +14,7 @@ Here are the tools that must be installed for CoCo to work:
 * [Subread](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by CorrectCount to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
 * [BEDtools](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by CorrectAnnotation and for *genomecov* which is used by CorrectBedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
 * [samtools](http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
+* [pairedBamToBed12](https://github.com/Population-Transcriptomics/pairedBamToBed12), only required for the CorrectBedgraph mode.
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
 CoCo also uses some python3 packages:
@@ -23,7 +24,7 @@ CoCo also uses some python3 packages:
 
 Installing CoCo is done in a few easy steps.
 
-First, you must clone the git repositroy to your favourite directory.
+First, you must clone the git repository to your favorite directory.
 
 ```
 cd /path/to/clone/
