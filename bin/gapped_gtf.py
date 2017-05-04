@@ -212,7 +212,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
                        'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype',
                        'transcript_support_level']]
-        df_gtf['seqname']=df_gtf['start'].map(str)
+        df_gtf['seqname']=df_gtf['seqname'].map(str)
         df_gtf['start']=df_gtf['start'].map(int)
         df_gtf['end']=df_gtf['end'].map(int)
     except:
