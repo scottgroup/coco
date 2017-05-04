@@ -181,9 +181,10 @@ def build_gapped_gtf(df_gtf,dexon,output):
     df_gtf=df_gtf.sort_values(by=['gene_id','transcript_id','feature'])
     df_gtf.loc[df_gtf['feature'] == 'zexon','feature']='exon'
     df_gtf=df_gtf.reset_index(drop=True)
+    df_gtf['transcript_support_level']=df_gtf['transcript_support_level'].fillna(value='NA')
     df_gtf.loc[df_gtf['feature'] == 'gene','attribute']='gene_id "'+df_gtf['gene_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'";'
     df_gtf.loc[df_gtf['feature'] == 'transcript','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; transcript_support_level "'+df_gtf['transcript_support_level']+'";'
-    df_gtf.loc[df_gtf['feature'] == 'exon','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; exon_number "'+df_gtf['exon_number']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; exon_id "'+df_gtf['exon_id']+'";'
+    df_gtf.loc[df_gtf['feature'] == 'exon','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; exon_number "'+df_gtf['exon_number']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; transcript_support_level "'+df_gtf['transcript_support_level']+'"; exon_id "'+df_gtf['exon_id']+'";'
     df_gtf['score']='.'
     df_gtf['frame']='.'
     df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame','attribute']]
@@ -218,7 +219,6 @@ def CorrectAnnotation(gtf_file,output, biotypes_embedded=('snoRNA','scaRNA','tRN
         sys.exit(1)
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
-    #df_gtf.loc[df_gtf['transcript_support_level'].isnull()==True,'transcript_support_level']=df_gtf['transcript_support_level']
     df_gtf=df_gtf[df_gtf['feature'].isin(['gene','transcript','exon'])==True]
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
