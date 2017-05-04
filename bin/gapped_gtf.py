@@ -182,7 +182,7 @@ def build_gapped_gtf(df_gtf,dexon,output):
     df_gtf.loc[df_gtf['feature'] == 'zexon','feature']='exon'
     df_gtf=df_gtf.reset_index(drop=True)
     df_gtf.loc[df_gtf['feature'] == 'gene','attribute']='gene_id "'+df_gtf['gene_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'";'
-    df_gtf.loc[df_gtf['feature'] == 'transcript','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'";'
+    df_gtf.loc[df_gtf['feature'] == 'transcript','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; transcript_support_level "'+df_gtf['transcript_support_level']+'";'
     df_gtf.loc[df_gtf['feature'] == 'exon','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; exon_number "'+df_gtf['exon_number']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; exon_id "'+df_gtf['exon_id']+'";'
     df_gtf['score']='.'
     df_gtf['frame']='.'
