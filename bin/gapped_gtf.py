@@ -5,7 +5,7 @@ import sys, os
 import csv
 from GTF import dataframe
 
-def getOverlap(a, b):
+def getoverlap(a, b):
     if max(0, min(a[1], b[1]) - max(a[0], b[0])) > 0:
         return (min(a[0], b[0]), max(a[1], b[1]))
     else:
@@ -16,7 +16,7 @@ def unique_list(list):
     seen_add = seen.add
     return [x for x in list if not (x in seen or seen_add(x))]
 
-def Intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,keep='all',r=0,join='loj',option=''):
+def intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,keep='all',r=0,join='loj',option=''):
     intersect_output=output+'.temp.intersect.bed'
     dataf_1_output=output+'.temp.1.bed'
     dataf_2_output=output+'.temp.2.bed'
@@ -114,7 +114,7 @@ def drill_an_exon(dIntersect,dexon_fix):
         gap_list=old_gap_list.copy()
         for i, gap in enumerate(old_gap_list):
             for j, gap_2 in enumerate(old_gap_list[:i] + old_gap_list[i+1:]):
-                gap_list[i]=getOverlap(gap, gap_2)
+                gap_list[i]=getoverlap(gap, gap_2)
         gap_list=sorted(unique_list(gap_list), key=lambda tup: tup[0])
         gap_list_gap_ends=[ value[0]-1 for value in gap_list ]+[row['end']]
         gap_list_gap_starts=[row['start']]+[ value[1]+1 for value in gap_list ]
@@ -209,6 +209,10 @@ def CorrectAnnotation(gtf_file,output, biotypes_embedded=('snoRNA','scaRNA','tRN
         sys.exit(1)
     try:
         df_gtf=dataframe(gtf_file)
+        df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
+        df_gtf['seqname']=df_gtf['start'].map(str)
+        df_gtf['start']=df_gtf['start'].map(int)
+        df_gtf['end']=df_gtf['end'].map(int)
     except:
         print("error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene transfer format (.gtf) and comes from Ensembl.")
         sys.exit(1)
@@ -228,7 +232,7 @@ def CorrectAnnotation(gtf_file,output, biotypes_embedded=('snoRNA','scaRNA','tRN
     dexon_host['exon_id']=dexon_host['transcript_id']+'.'+dexon_host['exon_number'].map(int).map(str)
     dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
     dexon_not_host['exon_id']=dexon_not_host['transcript_id']+'.'+dexon_not_host['exon_number'].map(int).map(str)
-    dIntersect=Intersect(dexon_host,dgene_embedded,name=('exon_id','gene_id'))
+    dIntersect=intersect(dexon_host,dgene_embedded,name=('exon_id','gene_id'))
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
     del dIntersect['overlap']
     dexon_slice=drill_an_exon(dIntersect,dexon_host)
