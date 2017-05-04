@@ -53,7 +53,7 @@ def ratio_mmg(input_file, gtf_file, unique_counts, output_file):
     df_multi.columns = ['count_multi']
     df_merged = pd.merge(df_unique, df_multi, left_index=True, right_index=True)
     df_merged['tot'] = df_merged.accumulation + df_merged.count_multi
-    outfile = output_file +'_distributed_counts.txt'
+    outfile = output_file
     df_merged['tot'].to_csv(outfile, sep='\t', header=False)
 
 

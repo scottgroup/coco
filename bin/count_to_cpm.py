@@ -3,6 +3,7 @@ pd.options.mode.chained_assignment = None
 import os,sys
 import re
 from GTF import dataframe
+from distribute_counts import read_count_matrix
 
 
 def get_main_transcript(dtranscript):
@@ -35,7 +36,7 @@ def get_true_length_from_gtf(df_gtf):
     return df_gtf
 
 
-def add_pm_counts(count_file,gtf_file,bam_file):
+def add_pm_counts(count_file,gtf_file,bam_file, count_type):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
     Uses the GTF.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of that script
@@ -61,8 +62,11 @@ def add_pm_counts(count_file,gtf_file,bam_file):
         sys.exit(1)
     df_gtf=get_true_length_from_gtf(df_gtf)
     df_gtf=df_gtf[['gene_id','gene_name','gene_biotype','length']]
-    dcount = pd.read_csv(count_file, sep=' ', header=None, names=['gene_id','count'])
-
+    if count_type  == 'uniqueOnly':
+        dcount = read_count_matrix(count_file)
+        dcount = dcount.rename(columns={'accumulation':'count'})
+    else :
+        dcount = pd.read_csv(count_file, sep=' ', header=None, names=['gene_id','count'])
     Assigned=dcount['count'].sum()
     dcount['cpm']=(dcount['count'].map(float)/Assigned)*1E6
     dcount=pd.merge(dcount,df_gtf,how='right',on='gene_id')
@@ -79,8 +83,8 @@ def add_pm_counts(count_file,gtf_file,bam_file):
 
 
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/Rsubread_CoCo/%s.CorrectCount.Rsubread.count')
     #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/before_correction/Notcoco/%s.CorrectCount_NOTCOCO.Rsubread.count')
     #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/before_correction/Initial/%s.CorrectCount.Rsubread.count')
-    main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/old_CoCo/%s.CorrectCount_wo_dup.Rsubread.count')
+    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/old_CoCo/%s.CorrectCount_wo_dup.Rsubread.count')

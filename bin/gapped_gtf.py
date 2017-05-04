@@ -193,7 +193,7 @@ def build_gapped_gtf(df_gtf,dexon,output):
 
 
 
-def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRNA','snRNA')):
+def CorrectAnnotation(gtf_file,output, biotypes_embedded=('snoRNA','scaRNA','tRNA','miRNA','snRNA')):
     """
     CorrectAnnotation builds a new gtf from the one provided, with holes on exons from genes that overlap the specified embedded biotypes.
     Read the MANUAL.md for extensive description.
@@ -211,6 +211,7 @@ def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRN
         df_gtf=dataframe(gtf_file)
     except:
         print("error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene transfer format (.gtf) and comes from Ensembl.")
+        sys.exit(1)
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
     #df_gtf.loc[df_gtf['transcript_support_level'].isnull()==True,'transcript_support_level']=df_gtf['transcript_support_level']
@@ -235,8 +236,9 @@ def CorrectAnnotation(gtf_file,biotypes_embedded=('snoRNA','scaRNA','tRNA','miRN
     dexon_host=pd.concat([dexon_host,dexon_slice])
     dexon=pd.concat([dexon_host,dexon_not_host])
     dexon=fix_exon_number(dexon)
-    output_gtf=gtf_file.replace('.gtf','.CorrectAnnotation.gtf')
-    build_gapped_gtf(df_gtf,dexon,output_gtf)
+    if output =='None':
+        output=gtf_file.replace('.gtf','.CorrectAnnotation.gtf')
+    build_gapped_gtf(df_gtf,dexon,output)
 
 if __name__=='__main__':
     if len(sys.argv)>1:

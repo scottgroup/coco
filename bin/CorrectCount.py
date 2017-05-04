@@ -118,7 +118,7 @@ def main():
     tests.check_gtf(gtf_file)
     tests.check_bam(bamfile)
     tests.check_output(output)
-    print('okay')
+
     output_dir = os.path.dirname(output)
     if output_dir == '':
         output_dir = os.getcwd()
@@ -128,25 +128,29 @@ def main():
     else:
         paired = '-p '
 
-    if count_type =='uniqueOnly':
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, output, bamfile)
-        if x!=0 :
-            sys.exit(x)
-
-    elif count_type=='multiOnly':
-        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir)
-
-    else:
-        #For both, default.
-        unique_output = output_dir+'/unique_'+os.path.basename(output)
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile)
-        if x != 0:
-            sys.exit(x)
-        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_output, output_dir)
-
+    # if count_type =='uniqueOnly':
+    #     output_file = output_dir+os.path.basename(output)
+    #     x = coco_unique(minOverlap, strand, thread, paired, gtf_file, output_file, bamfile)
+    #     if x!=0 :
+    #         sys.exit(x)
+    #
+    # elif count_type=='multiOnly':
+    #     x = coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir)
+    #     if x!=0 :
+    #         sys.exit(x)
+    #
+    # elif count_type == 'both':
+    #     #For both, default.
+    #     unique_output = output_dir+'/unique_'+os.path.basename(output)
+    #     x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile)
+    #     if x != 0:
+    #         sys.exit(x)
+    #     coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_output, output_dir)
+    # else:
+    #     sys.exit(1)
 
     if rawonly!=True:
-        count_to_cpm.add_pm_counts(output, gtf_file, bamfile)
+        count_to_cpm.add_pm_counts(output, gtf_file, bamfile, count_type)
 
 
 if __name__ == '__main__':
