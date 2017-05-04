@@ -16,7 +16,10 @@ def get_main_transcript(dtranscript):
     dtranscript=dtranscript[dtranscript['gene_biotype']==dtranscript['transcript_biotype']]
     dtranscript.loc[dtranscript['source']=='ensembl_havana','source']='aa' #source with highest level of confidence.
     dtranscript.loc[dtranscript['source']=='havana','source']='ab' #source with second level of confidence.
-    dtranscript=dtranscript.sort_values(by=['gene_id','transcript_support_level','source','transcript_name'],ascending=[True,True,True,True])
+    if 'transcript_support_level' in dtranscript.columns:
+        dtranscript=dtranscript.sort_values(by=['gene_id','transcript_support_level','source','transcript_name'],ascending=[True,True,True,True])
+    else:
+        dtranscript=dtranscript.sort_values(by=['gene_id','source','transcript_name'],ascending=[True,True,True])
     dtranscript=dtranscript.drop_duplicates(subset=['gene_id'])
     return dtranscript
 
