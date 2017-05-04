@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CorrectBedgraph.py
+correct_bedgraph.py
 This script produces bedgraph from paired-end datasets.
 For more information about its purpose and use, please read the MANUAL.md
 """

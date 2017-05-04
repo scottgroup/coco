@@ -1,5 +1,5 @@
 import pandas as pd
-import GTF
+import gtf
 import sys
 
 
@@ -20,11 +20,17 @@ def ratio_mmg(input_file, gtf_file, unique_counts, output_file):
         print('error: Wrong annotation format. Only .gtf files are accepted')
         sys.exit(1)
     try:
-        df_gtf=GTF.dataframe(gtf_file)
+        df_gtf=gtf.dataframe(gtf_file)
+        df_gtf = df_gtf[
+            ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
+             'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
+        df_gtf['seqname'] = df_gtf['start'].map(str)
+        df_gtf['start'] = df_gtf['start'].map(int)
+        df_gtf['end'] = df_gtf['end'].map(int)
     except:
         print("Error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene \
         transfer format (.gtf) and comes from Ensembl.")
-        sys.exit()
+        sys.exit(1)
     df_gtf = df_gtf[df_gtf.feature=='gene']
     df_unique = read_count_matrix(unique_counts)
     df_unique = df_unique.merge(df_gtf, on='gene_id', how='outer')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-GTF.py
+gtf.py
 Kamil Slowikowski
 December 24, 2013
 Read GFF/GTF files. Works with gzip compressed files and pandas.
