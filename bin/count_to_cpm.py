@@ -2,7 +2,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 import os,sys
 import re
-from GTF import dataframe
+from gtf import dataframe
 from distribute_counts import read_count_matrix
 
 
@@ -42,7 +42,7 @@ def get_true_length_from_gtf(df_gtf):
 def add_pm_counts(count_file,gtf_file,bam_file, count_type):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
-    Uses the GTF.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of that script
+    Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of that script
     by specifying the --rawOnly option in CorrectCount.
 
     :param count_file: featureCounts count file.
@@ -60,9 +60,16 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
         sys.exit(1)
     try:
         df_gtf=dataframe(gtf_file)
+        df_gtf = df_gtf[
+            ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
+             'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
+        df_gtf['seqname'] = df_gtf['seqname'].map(str)
+        df_gtf['start'] = df_gtf['start'].map(int)
+        df_gtf['end'] = df_gtf['end'].map(int)
     except:
-        print('error: gtf file %s could not be read. Please specify a proper annotation file in gene transfert format (.gtf) obtained from Ensembl.' %(gtf_file))
-        sys.exit(1)
+        raise
+        #print('error: gtf file %s could not be read. Please specify a proper annotation file in gene transfert format (.gtf) obtained from Ensembl.' %(gtf_file))
+        #sys.exit(1)
     df_gtf=get_true_length_from_gtf(df_gtf)
     df_gtf=df_gtf[['gene_id','gene_name','gene_biotype','length']]
     if count_type  == 'uniqueOnly':

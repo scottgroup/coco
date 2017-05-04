@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-GTF.py
+gtf.py
 Kamil Slowikowski
 December 24, 2013
 Read GFF/GTF files. Works with gzip compressed files and pandas.
@@ -78,7 +78,8 @@ def parse(line):
 
     for i, col in enumerate(GTF_HEADER):
         result[col] = _get_value(fields[i])
-
+    print(line)
+    print(fields)
     # INFO field consists of "key1=value;key2=value;...".
     infos = [x for x in re.split(R_SEMICOLON, fields[8]) if x.strip()]
 

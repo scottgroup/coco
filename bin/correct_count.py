@@ -77,7 +77,7 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("annotation", help="annotation file produced with CorrectAnnotation in .gtf format.")
+    parser.add_argument("annotation", help="annotation file produced with correct_annotation in .gtf format.")
     parser.add_argument("bamfile", help="alignment file in .bam format.")
     parser.add_argument("output", help="Name of the output file holding the counts per genes. ")
 
