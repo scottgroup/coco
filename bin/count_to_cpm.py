@@ -1,7 +1,8 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
-import os,sys
-import re
+import os
+import sys
+import subprocess
 from gtf import dataframe
 from distribute_counts import read_count_matrix
 
@@ -17,7 +18,8 @@ def get_main_transcript(dtranscript):
     dtranscript.loc[dtranscript['source']=='ensembl_havana','source']='aa' #source with highest level of confidence.
     dtranscript.loc[dtranscript['source']=='havana','source']='ab' #source with second level of confidence.
     if 'transcript_support_level' in dtranscript.columns:
-        dtranscript=dtranscript.sort_values(by=['gene_id','transcript_support_level','source','transcript_name'],ascending=[True,True,True,True])
+        dtranscript=dtranscript.sort_values(by=['gene_id','transcript_support_level','source','transcript_name'],
+                                            ascending=[True,True,True,True])
     else:
         dtranscript=dtranscript.sort_values(by=['gene_id','source','transcript_name'],ascending=[True,True,True])
     dtranscript=dtranscript.drop_duplicates(subset=['gene_id'])
@@ -49,10 +51,17 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
     :param gtf_file: annotation file in gtf format.
     :param bam_file: bam file, used to calculate max read size.
     """
-    command='samtools view %s | head -n 100000 | cut -f 10 | wc -L' %(bam_file)
-    max_read_size=os.system(command)
+    read_bam = ('samtools','view', bam_file)
+    head_file = ('head','-n','100000')
+    select_col = ('cut','-f','10')
+    wc = ('wc','-L')
+    c1 = subprocess.Popen(read_bam, stdout=subprocess.PIPE)
+    c2 = subprocess.Popen(head_file, stdin=c1.stdout, stdout=subprocess.PIPE)
+    c3 = subprocess.Popen(select_col, stdin=c2.stdout, stdout=subprocess.PIPE)
+    max_read_size=subprocess.check_output(wc, stdin=c3.stdout)
+
     try:
-        max_read_size=int(max_read_size)
+        max_read_size = int(str(max_read_size, 'utf-8'))
     except:
         print("error: There was a problem while reading the bam file to get the max read size.\n"
               "command performed: 'samtools view %s | head -n 100000 | cut -f 10 | wc -L'\n"
@@ -67,29 +76,28 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
         df_gtf['start'] = df_gtf['start'].map(int)
         df_gtf['end'] = df_gtf['end'].map(int)
     except:
-        raise
-        #print('error: gtf file %s could not be read. Please specify a proper annotation file in gene transfert format (.gtf) obtained from Ensembl.' %(gtf_file))
-        #sys.exit(1)
-    df_gtf=get_true_length_from_gtf(df_gtf)
-    df_gtf=df_gtf[['gene_id','gene_name','gene_biotype','length']]
-    if count_type  == 'uniqueOnly':
+        print('error: gtf file %s could not be read. Please specify a proper annotation file in gene transfert '
+              'format (.gtf) obtained from Ensembl.' %(gtf_file))
+        sys.exit(1)
+    df_gtf = get_true_length_from_gtf(df_gtf)
+    df_gtf = df_gtf[['gene_id', 'gene_name', 'gene_biotype', 'length']]
+    if count_type == 'uniqueOnly':
         dcount = read_count_matrix(count_file)
-        dcount = dcount.rename(columns={'accumulation':'count'})
-    else :
-        dcount = pd.read_csv(count_file, sep=' ', header=None, names=['gene_id','count'])
-    Assigned=dcount['count'].sum()
-    dcount['cpm']=(dcount['count'].map(float)/Assigned)*1E6
-    dcount=pd.merge(dcount,df_gtf,how='right',on='gene_id')
-    dcount['temp']=dcount['count']/dcount['length']
-    dcount.loc[dcount['length'] < max_read_size,'temp']=dcount['count']/max_read_size
-    sum_temp=dcount['temp'].sum()
-    dcount['tpm']=(dcount['temp']/sum_temp)*1E6
-    #dcount.loc[dcount['length'] < read_length_dict[exp], 'tpm'] = dcount['cpm']
+        dcount = dcount.rename(columns={'accumulation': 'count'})
+    else:
+        dcount = pd.read_csv(count_file, sep='\t', header=None, names=['gene_id', 'count'])
+    Assigned = dcount['count'].sum()
+    dcount['cpm'] = (dcount['count'].map(float) / Assigned) * 1E6
+    dcount = pd.merge(dcount, df_gtf, how='right', on='gene_id')
+    dcount['temp'] = dcount['count'] / dcount['length']
+    dcount.loc[dcount['length'] < max_read_size, 'temp'] = dcount['count'] / max_read_size
+    sum_temp = dcount['temp'].sum()
+    dcount['tpm'] = (dcount['temp'] / sum_temp) * 1E6
+    # dcount.loc[dcount['length'] < read_length_dict[exp], 'tpm'] = dcount['cpm']
     del dcount['temp']
-    #dcount=dcount.sort_values(by=['tpm'],ascending=False)
-    dcount=dcount[['gene_id','gene_name','count','cpm','tpm']]
-    dcount.to_csv(path_or_buf=count_file,
-                      index=False, sep='\t', header=True)
+    # dcount=dcount.sort_values(by=['tpm'],ascending=False)
+    dcount = dcount[['gene_id', 'gene_name', 'count', 'cpm', 'tpm']]
+    dcount.to_csv(path_or_buf=count_file, index=False, sep='\t', header=True)
 
 
 
