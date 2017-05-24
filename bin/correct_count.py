@@ -34,6 +34,7 @@ def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bam
 
 
 def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir):
+    os.chdir(output_dir)
     if not unique_counts:
         sys.exit('multiOnly requires the option -u to be set (count matrix from uniquely mapped reads)')
     output_name = os.path.basename(output)
@@ -43,35 +44,34 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
     fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vw 'NH:i:1' >> %s/multi_%s.sam && "%(bamfile, output_dir, output_name)
     samtobam = 'samtools view -b %s/multi_%s.sam > %s/multi_%s.bam &&'%(output_dir,output_name, output_dir,output_name)
     rm_multisam = 'rm %s/multi_%s.sam'%(output_dir,output_name)
-    # x = os.system(fetch_header+fetch_multi+samtobam+ rm_multisam)
-    # if x !=0 :
-    #     sys.exit('extracting multi exit status: %s'%(str(x)))
-    # command="featureCounts " \
-    #         "--minOverlap %d " \
-    #         "--largestOverlap " \
-    #         "-s %d " \
-    #         "-C " \
-    #         "-T %s " \
-    #         "%s" \
-    #         "-a %s " \
-    #         "-o %s "\
-    #         "-M "\
-    #         "-R " \
-    #         "-B " \
-    #         "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name,
-    #                output_dir+'/multi_'+output_name+'.bam')
-    # x = os.system(command)
-    # if x !=0:
-    #     sys.exit(x)
-    # group_reads = 'perl %s/count_from_bed.pl %s/%s.multi_%s.bam.featureCounts > %s/%s_grouped.txt'%(os.path.dirname(__file__),
-    #                                                                                     output_dir,
-    #                                                                                     output_dir.strip('/').replace('/','.'),
-    #                                                                                     output_name,
-    #                                                                                     output_dir,
-    #                                                                                     output_name)
-    # os.system(group_reads)
-    #output_file = output_dir+'/'+output_name
-    #distribute_counts.ratio_mmg(output_name +'_grouped.txt', gtf_file, unique_counts, output_file)
+    x = os.system(fetch_header+fetch_multi+samtobam+ rm_multisam)
+    if x !=0 :
+        sys.exit('extracting multi exit status: %s'%(str(x)))
+    command="featureCounts " \
+            "--minOverlap %d " \
+            "--largestOverlap " \
+            "-s %d " \
+            "-C " \
+            "-T %s " \
+            "%s" \
+            "-a %s " \
+            "-o %s "\
+            "-M "\
+            "-R " \
+            "-B " \
+            "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name,
+                  'multi_'+output_name+'.bam')
+    x = os.system(command)
+    if x !=0:
+        sys.exit(x)
+    group_reads = 'perl %s/count_from_bed.pl %s/multi_%s.bam.featureCounts > %s/%s_grouped.txt'%(os.path.dirname(__file__),
+                                                                                        output_dir,
+                                                                                        output_name,
+                                                                                        output_dir,
+                                                                                        output_name)
+    os.system(group_reads)
+    output_file = output_dir+'/'+output_name
+    distribute_counts.ratio_mmg(output_name +'_grouped.txt', gtf_file, unique_counts, output_file)
 
 
 def main():
@@ -129,7 +129,7 @@ def main():
         paired = '-p '
 
     if count_type =='uniqueOnly':
-        output_file = output_dir+os.path.basename(output)
+        output_file = output_dir + '/' + os.path.basename(output)
         x = coco_unique(minOverlap, strand, thread, paired, gtf_file, output_file, bamfile)
         if x!=0 :
             sys.exit(x)

@@ -64,7 +64,7 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
         max_read_size = int(str(max_read_size, 'utf-8'))
     except:
         print("error: There was a problem while reading the bam file to get the max read size.\n"
-              "command performed: 'samtools view %s | head -n 100000 | cut -f 10 | wc -L'\n"
+              "command performed: 'samtools view %s | head -n 10| cut -f 10 | wc -L'\n"
               "output obtained: %s" %(bam_file,max_read_size))
         sys.exit(1)
     try:

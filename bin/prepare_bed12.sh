@@ -18,7 +18,7 @@ if [ "True" = "${multi}" ]; then
 
 	rm $outpath/${bamfile}_properpair.sam &&
 
-	#convert sam to bam
+	# convert sam to bam
 	samtools view -b $outpath/${bamfile}_properpair.sorted.sam > $outpath/${bamfile}_properpair.sorted.bam &&
 
 	rm $outpath/${bamfile}_properpair.sorted.sam
