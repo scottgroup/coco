@@ -31,6 +31,8 @@ def check_bam(bam_file):
     else:
         linesplit=line.split('\t')
         if len(linesplit) < 11:
+            print("first line :")
+            print(line)
             print("error: entries from bam file are incomplete. the file provided should have at least 11 fields, only %d fields in the bam's first entry." %(len(linesplit)))
             sys.exit(1)
 

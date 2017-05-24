@@ -104,6 +104,9 @@ See also the list of [contributors](https://github.com/your/project/contributors
 
 ## **License**
 
+CoCo: Count Corrector for embedded and multi-mapped genes.
+Copyright (C) 2017 Gabrielle Deschamps-Francoeur, Vincent Boivin & Michelle Scott
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -111,7 +114,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 For more information about the GNU General Public License, see <http://www.gnu.org/licenses/>.
@@ -129,8 +132,8 @@ Scientific results produced using CoCo shall acknowledge its use. Please cite as
 ## **Acknowledgments**
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
-* Many thanks to Jean-Michel Garrant as well for his general wisdom.
-* Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py and gtf_to_csv.py scripts that are used by CorrectAnnotation.
+* Many thanks to Jean-Michel Garrant for his general wisdom.
+* Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py script that is used by CorrectAnnotation.
 
 
 
