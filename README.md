@@ -2,9 +2,9 @@
 
 # **CoCo**: Count Corrector for embedded and multi-mapped genes.
 
-CoCo is a pipeline designed to improve the evaluated abundances of embedded and multi-mapped genes from RNA-seq alignment data. CoCo is divided in two main parts which can be used together or seperately, depending on user's preferences. The first part being a correction of the gene annotation used by read assignment softwares such as featureCounts or HTSeq in order to correct the evaluated read counts for embedded genes such as snoRNA, that overlap features of their host gene's transcripts such as retained introns and exons. The second part of the correction distributes multi mapped reads in relation to the evaluated read counts obtained from single mapped reads.
+CoCo is a pipeline designed to improve the evaluated abundance of embedded and multi-mapped genes from RNA-seq alignment data. CoCo is divided in two main parts which can be used together or seperately, depending on the user's preference. The first part is a correction of the gene annotation used by read assignment softwares such as featureCounts or HTSeq in order to correct the evaluated read counts for embedded genes such as snoRNA, that overlap features of their host gene's transcripts such as retained introns and exons. The second part of the correction distributes multi mapped reads in relation to the evaluated read counts obtained from single mapped reads.
 
-We've shown that the combination of these two corrections gives the best correlation of the evaluated gene abundance from RNAseq data with abundances evaluated from other methods such as qPCR.
+We've shown that the combination of these two corrections gives the best correlation of the evaluated gene abundance from RNAseq data with abundance evaluated from other methods such as qPCR.
 
 
 
