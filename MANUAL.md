@@ -16,7 +16,7 @@ cd path/to/coco/bin/
 
 Here is how a user (you) can use the three CoCo modules to get to the desired output (whether it be the corrected gene expression values, the corrected paired-end bedgraph or both)
 
-<img src="ressources/CoCoPipeline.PNG" alt="CoCo Pipeline" style="width: 700px;"/>
+![alt tag](ressources/CoCoPipeline.PNG)
 
 Here's a description of what each run modes do:
 
@@ -62,4 +62,4 @@ Basic usage:
 coco CorrectBedgraph path/to/your/bam/alignment.bam path/to/your/output.bedgraph
 ```
 
-<img src="ressources/CorrectBedgraph.PNG" alt="CorrectBedgraph" style="width: 600px;"/>
+![alt tag](ressources/CorrectBedgraph.PNG)
