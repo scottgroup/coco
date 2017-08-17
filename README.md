@@ -1,4 +1,4 @@
-<img style="float: left; width: 150px;" src="ressources/CoCoLogo.PNG" >
+![alt tag](ressources/CoCoLogo.PNG)
 
 # **CoCo**: Count Corrector for embedded and multi-mapped genes.
 
