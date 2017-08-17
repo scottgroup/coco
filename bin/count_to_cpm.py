@@ -14,16 +14,20 @@ def get_main_transcript(dtranscript):
     :param dtranscript: dataframe containing all transcripts
     :return:dataframe containing one main transcript per gene_id
     """
-    dtranscript=dtranscript[dtranscript['gene_biotype']==dtranscript['transcript_biotype']]
-    dtranscript.loc[dtranscript['source']=='ensembl_havana','source']='aa' #source with highest level of confidence.
-    dtranscript.loc[dtranscript['source']=='havana','source']='ab' #source with second level of confidence.
-    if 'transcript_support_level' in dtranscript.columns:
-        dtranscript=dtranscript.sort_values(by=['gene_id','transcript_support_level','source','transcript_name'],
+    gene_list = set(dtranscript.gene_id.unique())
+    dtranscript2=dtranscript[dtranscript['gene_biotype']==dtranscript['transcript_biotype']]
+    short_list = set(dtranscript2.gene_id.unique())
+    gene_lost = gene_list-short_list
+    dtranscript2 = dtranscript2.append(dtranscript[dtranscript.gene_id.isin(gene_lost)])
+    dtranscript2.loc[dtranscript2['source']=='ensembl_havana','source']='aa' #source with highest level of confidence.
+    dtranscript2.loc[dtranscript2['source']=='havana','source']='ab' #source with second level of confidence.
+    if 'transcript_support_level' in dtranscript2.columns:
+        dtranscript2=dtranscript2.sort_values(by=['gene_id','transcript_support_level','source','transcript_name'],
                                             ascending=[True,True,True,True])
     else:
-        dtranscript=dtranscript.sort_values(by=['gene_id','source','transcript_name'],ascending=[True,True,True])
-    dtranscript=dtranscript.drop_duplicates(subset=['gene_id'])
-    return dtranscript
+        dtranscript2=dtranscript2.sort_values(by=['gene_id','source','transcript_name'],ascending=[True,True,True])
+    dtranscript2=dtranscript2.drop_duplicates(subset=['gene_id'])
+    return dtranscript2
 
 
 def get_true_length_from_gtf(df_gtf):
@@ -86,6 +90,7 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
         dcount = dcount.rename(columns={'accumulation': 'count'})
     else:
         dcount = pd.read_csv(count_file, sep='\t', header=None, names=['gene_id', 'count'])
+    dcount[['count']] = dcount[['count']].astype(float)
     Assigned = dcount['count'].sum()
     dcount['cpm'] = (dcount['count'].map(float) / Assigned) * 1E6
     dcount = pd.merge(dcount, df_gtf, how='right', on='gene_id')
