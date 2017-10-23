@@ -14,6 +14,8 @@ import sys, os
 import tests
 import count_to_cpm
 import distribute_counts
+import distribute_multireads
+import subprocess
 
 
 
@@ -33,7 +35,7 @@ def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bam
     return x
 
 
-def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir):
+def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir, R_opt):
     os.chdir(output_dir)
     if not unique_counts:
         sys.exit('multiOnly requires the option -u to be set (count matrix from uniquely mapped reads)')
@@ -57,21 +59,23 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
             "-a %s " \
             "-o %s "\
             "-M "\
-            "-R " \
+            "-R %s " \
             "-B " \
-            "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name,
+            "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name, R_opt,
                   'multi_'+output_name+'.bam')
     x = os.system(command)
     if x !=0:
         sys.exit(x)
-    group_reads = 'perl %s/count_from_bed.pl %s/multi_%s.bam.featureCounts > %s/%s_grouped.txt'%(os.path.dirname(__file__),
-                                                                                        output_dir,
-                                                                                        output_name,
-                                                                                        output_dir,
-                                                                                        output_name)
-    os.system(group_reads)
+    #group_reads = 'perl %s/count_from_bed.pl %s/multi_%s.bam.featureCounts > %s/%s_grouped.txt'%(os.path.dirname(__file__),
+    #                                                                                    output_dir,
+    #                                                                                    output_name,
+    #                                                                                    output_dir,
+    #                                                                                    output_name)
+    #os.system(group_reads)
     output_file = output_dir+'/'+output_name
-    distribute_counts.ratio_mmg(output_name +'_grouped.txt', gtf_file, unique_counts, output_file)
+    featurefile = '%s/multi_%s.bam.featureCounts'%(output_dir, output_name)
+    distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, gtf_file, output_file)
+    #distribute_counts.ratio_mmg(output_name +'_grouped.txt', gtf_file, unique_counts, output_file)
 
 
 def main():
@@ -101,6 +105,8 @@ def main():
     parser.add_argument("-u", "--unique_counts", help="Path to uniquely mapped reads count matrix with following format: "
                                                       "gene_id  seqname start   end strand  length  accumulation (separated by a tabulation). "
                                                       "Required for multiOnly", type=str)
+    parser.add_argument("-R", help="featureCounts output format for subread version >=1.5.3",
+                                                      choices=['CORE','SAM'], type=str, default='CORE')
     args = parser.parse_args()
 
     gtf_file = args.annotation
@@ -119,6 +125,11 @@ def main():
     tests.check_bam(bamfile)
     tests.check_output(output)
 
+    v = subprocess.run(['featureCounts','-v'], stderr=subprocess.PIPE).stderr.decode('utf-8').strip()
+    if v<'v1.5.3':
+        R_opt = ''
+    print('Using, version %s, -R %s'%(str(v),R_opt))
+
     output_dir = os.path.dirname(output)
     if output_dir == '':
         output_dir = os.getcwd()
@@ -135,7 +146,7 @@ def main():
             sys.exit(x)
 
     elif count_type=='multiOnly':
-        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir)
+        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir, R_opt)
 
 
     elif count_type == 'both':
@@ -144,7 +155,7 @@ def main():
         x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile)
         if x != 0:
             sys.exit(x)
-        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_output, output_dir)
+        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_output, output_dir, R_opt)
     else:
         sys.exit(1)
 
