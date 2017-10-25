@@ -1,6 +1,5 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
-import os
 import sys
 import subprocess
 from gtf import dataframe
@@ -48,8 +47,8 @@ def get_true_length_from_gtf(df_gtf):
 def add_pm_counts(count_file,gtf_file,bam_file, count_type):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
-    Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of that script
-    by specifying the --rawOnly option in CorrectCount.
+    Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of
+    that script by specifying the --rawOnly option in CorrectCount.
 
     :param count_file: featureCounts count file.
     :param gtf_file: annotation file in gtf format.
@@ -104,10 +103,3 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
     dcount = dcount[['gene_id', 'gene_name', 'count', 'cpm', 'tpm']]
     dcount.to_csv(path_or_buf=count_file, index=False, sep='\t', header=True)
 
-
-
-#if __name__ == '__main__':
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/Rsubread_CoCo/%s.CorrectCount.Rsubread.count')
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/before_correction/Notcoco/%s.CorrectCount_NOTCOCO.Rsubread.count')
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/before_correction/Initial/%s.CorrectCount.Rsubread.count')
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/old_CoCo/%s.CorrectCount_wo_dup.Rsubread.count')
