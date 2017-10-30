@@ -3,6 +3,8 @@ import gtf
 import sys
 import math
 import os
+import multiprocessing as mp
+import numpy as np
 
 
 def distribute_counts(df, df_unique):
@@ -66,6 +68,15 @@ def unique_counts(gtf_file, unique_file):
     return df_unique
 
 
+def parse_sam(df):
+    # merge optional tags in one column
+    df['TAGS'] = df[df.columns[14:]].apply(lambda x: '|'.join(x.dropna().astype(str)), axis=1)
+    df = df.drop(['TAG4', 'TAG5', 'TAG6', 'TAG7', 'TAG8', 'TAG9', 'TAG10', 'TAG11'], axis=1)
+    # extract XT:Z: tag if present
+    df['gene_id'] = df['TAGS'].apply(
+        lambda x: x.split('|')[-1].strip().replace('XT:Z:', '') if 'XT:Z:' in x else 'NaN')
+    return df
+
 def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     ext = R_opt.lower()
     fetch_header = 'samtools view -H %s.%s > %s.out.sam && '%(samfile,ext,samfile)
@@ -91,20 +102,21 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
                                                     'TAG6','TAG7','TAG8','TAG9','TAG10','TAG11'],
                                              dtype={'RNAME':str}, chunksize=chunksize)):
 
-        print('chunk %d' % n)
-        # merge optional tags in one column
-        df_chunk['TAGS'] = df_chunk[df_chunk.columns[14:]].apply(lambda x: '|'.join(x.dropna().astype(str)), axis=1)
-        df_chunk = df_chunk.drop(['TAG4', 'TAG5', 'TAG6', 'TAG7', 'TAG8', 'TAG9', 'TAG10', 'TAG11'], axis=1)
-        # extract XT:Z: tag if present
-        df_chunk['gene_id'] = df_chunk['TAGS'].apply(lambda x: x.split('|')[-1].strip().replace('XT:Z:', '') if 'XT:Z:' in x else 'NaN')
-
         # samfile must be sorted by name, keep the last name for the next chunk, if the read has multiple alignments
         # that are in different chunks. Ensures all reads are only counted once.
         last_name = df_chunk.tail(1).QNAME.values[0]
+        print(last_name)
         df_chunk = pd.concat([df_chunk, df_last])
         if n != total_chunk:
             df_last = df_chunk[df_chunk.QNAME == last_name].copy(deep=True)
             df_chunk = df_chunk[df_chunk.QNAME != last_name]
+
+        print('chunk %d' % n)
+        pool = mp.Pool(processes=nb_threads)
+        results = pool.map(parse_sam, [df for df in np.array_split(df_chunk, nb_threads)])
+        pool.close()
+
+        df_chunk = pd.concat(list(results))
 
         df_merged = distribute_counts(df_chunk[['QNAME','FLAG','TAG2','gene_id']], df_unique)
         df_chunk = df_chunk.drop(['gene_id'], axis=1)

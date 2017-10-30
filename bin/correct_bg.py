@@ -2,12 +2,12 @@ import pandas as pd
 import os
 import numpy as np
 import sys
+import multiprocessing as mp
 
 
-def prepare_bed12(bamfile, output_dir, multi):
-    filename = os.path.basename(bamfile).replace('.bam','')
-    command = 'bash %s/prepare_bed12.sh %s %s %s'%(os.path.dirname(__file__),filename,
-                                               output_dir, multi)
+def prepare_bed12(bamfile, output_dir, output_name, multi):
+    command = 'bash %s/prepare_bed12.sh %s %s %s %s'%(os.path.dirname(__file__),bamfile,
+                                               output_dir, output_name, multi)
     x = os.system(command)
     return x
 
@@ -23,6 +23,12 @@ def calc_reads(row):
             row['r2_len'] = ','.join([str(j) for j in row_len[i+1:]])
             break
     return row
+
+
+def apply_func(args):
+    df, func = args
+    df = df.apply(lambda row : func(row),axis=1)
+    return df
 
 
 def select_longest(row):
@@ -55,12 +61,17 @@ def select_blocks(row):
     return row
 
 
-def correct_bed12(df):
+def correct_bed12(df, nb_threads):
     df['r1_start'] = -1
     df['r1_len'] = -1
     df['r2_start'] = -1
     df['r2_len'] = -1
-    df = df.apply(lambda row: calc_reads(row), axis=1)
+
+    pool = mp.Pool(processes=nb_threads)
+    results = pool.map(apply_func, [[df_pool, calc_reads] for df_pool in np.array_split(df, nb_threads)])
+    pool.close()
+    df = pd.concat(list(results))
+    del results
 
     # Keep reads with no overlaps unchanged and remove from main df
     df_wo_overlap = df[df.r1_start == -1]
@@ -77,13 +88,21 @@ def correct_bed12(df):
     # if the block starts are the same, keep the longest block and read1 starts, and remove from main df
     df_same_start = df[df.r1_start == df.r2_start]
     df = df[df.r1_start != df.r2_start]
-    df_same_start = df_same_start.apply(lambda row: select_longest(row), axis=1)
+    pool = mp.Pool(processes=nb_threads)
+    results = pool.map(apply_func, [[df_pool, select_longest] for df_pool in np.array_split(df_same_start, nb_threads)])
+    pool.close()
+    df_same_start = pd.concat(list(results))
+    del results
     df_same_start['block_start'] = df.r1_start
     df_same_start = df_same_start.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
 
     # the remaining reads have partial exon overlap, so select and regroup the overlapping exon while keeping the ones
     # only represented by one read
-    df = df.apply(lambda row: select_blocks(row), axis=1)
+    pool = mp.Pool(processes=nb_threads)
+    results = pool.map(apply_func, [[df_pool, select_blocks] for df_pool in np.array_split(df, nb_threads)])
+    pool.close()
+    df = pd.concat(list(results))
+    del results
     df = df.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
     df_bed12 = pd.concat([df_wo_overlap, df_identical, df_same_start, df])
     del df_wo_overlap, df_identical, df_same_start, df
