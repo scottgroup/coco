@@ -48,9 +48,9 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
                                                                                                 output_name)
     samtobam = 'samtools view -b %s/multi_%s.sam > %s/multi_%s.bam &&'%(output_dir,output_name, output_dir,output_name)
     rm_multisam = 'rm %s/multi_%s.sam'%(output_dir,output_name)
-    #x = os.system(fetch_header+fetch_multi+samtobam+ rm_multisam)
-    #if x !=0 :
-    #    sys.exit('extracting multi exit status: %s'%(str(x)))
+    x = os.system(fetch_header+fetch_multi+samtobam+ rm_multisam)
+    if x !=0 :
+        sys.exit('extracting multi exit status: %s'%(str(x)))
     command="featureCounts " \
             "--minOverlap %d " \
             "--largestOverlap " \
@@ -65,20 +65,13 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
             "-B " \
             "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name, R_opt,
                   'multi_'+output_name+'.bam')
-    #x = os.system(command)
-    #if x !=0:
-    #    sys.exit(x)
-    #group_reads = 'perl %s/count_from_bed.pl %s/multi_%s.bam.featureCounts > %s/%s_grouped.txt'%(os.path.dirname(__file__),
-    #                                                                                    output_dir,
-    #                                                                                    output_name,
-    #                                                                                    output_dir,
-    #                                                                                    output_name)
-    #os.system(group_reads)
+    x = os.system(command)
+    if x !=0:
+        sys.exit(x)
     output_file = output_dir+'/'+output_name
     featurefile = '%s/multi_%s.bam.featureCounts'%(output_dir, output_name)
     distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, gtf_file,
                                                 output_file, v, chunksize, thread)
-    #distribute_counts.ratio_mmg(output_name +'_grouped.txt', gtf_file, unique_counts, output_file)
 
 
 def main():
@@ -173,9 +166,9 @@ def main():
     elif count_type == 'both':
         #For both, default.
         unique_output = output_dir+'/unique_'+os.path.basename(output)
-        #x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique)
-        #if x != 0:
-        #    sys.exit(x)
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique)
+        if x != 0:
+            sys.exit(x)
         coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile,
                    unique_output, output_dir, R_opt_multi, v, chunksize)
 
