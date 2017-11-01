@@ -68,6 +68,7 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
     x = os.system(command)
     if x !=0:
         sys.exit(x)
+    os.remove('%s/multi_%s.bam'%(output_dir,output_name))
     output_file = output_dir+'/'+output_name
     featurefile = '%s/multi_%s.bam.featureCounts'%(output_dir, output_name)
     distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, gtf_file,

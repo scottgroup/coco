@@ -87,8 +87,8 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
         sys.exit(x)
     sortedsam = '%s.sorted.%s'%(samfile,ext)
     os.remove(sortedsam)
-    sam = samfile+'.noheader.sam'
-    with open(sam, 'rb') as f:
+    sam_noheader = samfile+'.noheader.sam'
+    with open(sam_noheader, 'rb') as f:
         file_len = sum((1 for line in f))
     print(file_len)
 
@@ -96,7 +96,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     print('total_chunk %d' % total_chunk)
     df_last = pd.DataFrame()
     df_count = pd.DataFrame()
-    for n, df_chunk in enumerate(pd.read_csv(sam, sep='\t',
+    for n, df_chunk in enumerate(pd.read_csv(sam_noheader, sep='\t',
                                              names=['QNAME', 'FLAG', 'RNAME', 'POS', 'MAPQ', 'CIGAR', 'RNEXT', 'PNEXT',
                                                     'TLEN', 'SEQ', 'QUAL', 'TAG1', 'TAG2', 'TAG3', 'TAG4', 'TAG5',
                                                     'TAG6','TAG7','TAG8','TAG9','TAG10','TAG11'],
@@ -134,6 +134,8 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     x = os.system(sed)
     if x!=0:
         sys.exit(x)
+    os.remove(samfile+'.'+ext)
+    os.remove(sam_noheader)
     if R_opt == 'BAM':
         samtobam = 'samtools view -b -@ %d %s.out.sam > %s.out.bam && rm %s.out.sam'%(nb_threads, samfile, samfile,
                                                                                      samfile)
