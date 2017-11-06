@@ -193,6 +193,14 @@ def build_gapped_gtf(df_gtf,dexon,output):
     print('All done!')
 
 
+def output_emb_genes_and_host(dgene_embedded,dgene_host,
+                           output='/tmp/output.csv'):
+    dIntersect=intersect(dgene_embedded.rename(columns={'gene_id':'embedded_id'}),dgene_host.rename(columns={'gene_id':'host_id'}),name=('embedded_id','host_id'),option='')
+    dIntersect=dIntersect[dIntersect['overlap'] != -1][['seqname','start','end','strand','embedded_id','host_id']]
+    dIntersect.to_csv(path_or_buf=output,
+                          index=False, sep='\t', header=True)
+
+
 
 def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
     """
@@ -229,6 +237,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     #dgene=make_group_biotype(dgene)
     dgene_embedded=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == True]
     dgene_host=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == False]
+    output_emb_genes_and_host(dgene_embedded,dgene_host,output=gtf_file.replace('.gtf','.emb_vs_host.csv'))
 
     dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
     dexon_host['exon_id']=dexon_host['transcript_id']+'.'+dexon_host['exon_number'].map(int).map(str)
@@ -250,5 +259,7 @@ if __name__=='__main__':
     if len(sys.argv)>1:
         correct_annotation(gtf_file=sys.argv[1])
     else:
-        print('error: Not enough arguments!')
-        sys.exit(1)
+        correct_annotation(gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf',output='dirk')
+
+        #print('error: Not enough arguments!')
+        #sys.exit(1)
