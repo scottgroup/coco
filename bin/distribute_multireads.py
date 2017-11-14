@@ -31,7 +31,7 @@ def read_count_matrix(count_file):
 
 def read_corefile(corefile, colnames):
     # colnames must contain 'QNAME','gene_id','status' and'nb_targets'
-    df = pd.read_csv(corefile, names=colnames, sep='\t')
+    df = pd.read_csv(corefile, names=colnames, dtype={'nb_targets':str,'status':str, 'gene_id':str}, sep='\t')
     df = df[df['status']=='Assigned']
     df = df.drop(['status','nb_targets'], axis=1)
     return df
