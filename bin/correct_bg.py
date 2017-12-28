@@ -3,7 +3,7 @@ import os
 import numpy as np
 import sys
 import multiprocessing as mp
-
+import subprocess
 
 def prepare_bed12(bamfile, output_dir, output_name, multi):
     command = 'bash %s/prepare_bed12.sh %s %s %s %s'%(os.path.dirname(__file__),bamfile,
@@ -21,7 +21,6 @@ def calc_reads(row):
             row['r1_len'] = ','.join([str(j) for j in row_len[:i+1]])
             row['r2_start'] = ','.join([str(j) for j in row_start[i+1:]])
             row['r2_len'] = ','.join([str(j) for j in row_len[i+1:]])
-            break
     return row
 
 
@@ -134,7 +133,14 @@ def genome_cov(output_dir, output, genomepath, ucsc):
 
     if ucsc is True:
         with open(genomepath) as f:
+            # skips the trackline
             line = f.readline()
-            if line[0:3] != 'chr':
+            # reads the first line of the bedgraph
+            line = f.readline()
+        if line[0:3] != 'chr':
+            v = subprocess.run(['awk', '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split()[2].strip(',')
+            if v >= '4.1.0':
                 add_chr = "awk -i inplace 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s "%(output)
-                os.system(add_chr)
+            else:
+                add_chr = "awk 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s > %s.tmp && mv %s.tmp %s"%(output, output, output, output)                         
+            os.system(add_chr)

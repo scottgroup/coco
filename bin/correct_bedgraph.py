@@ -68,6 +68,5 @@ for filename in filelist:
                 mode = 'a'
             df_corrected = correct_bg.correct_bed12(df_chunk, thread)
             df_corrected.to_csv(outfile, index=False, header=False, sep='\t', mode=mode)
-    break
 os.remove('%s'%(''.join(output.split('.')[:-1])+'.bed12'))
 correct_bg.genome_cov(output_dir, output, genomepath, ucsc)

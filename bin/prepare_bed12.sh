@@ -28,7 +28,7 @@ elif [ "False" = "${multi}" ]; then
     echo 'Not sorting hit index';
 
 	# Keep only properly paired reads
-	samtools view -b -f 0x2 ${outpath}/${output_name}.bam > ${outpath}/${output_name}_properpair.bam &&
+	samtools view -b -f 0x2 ${bamfile} > ${outpath}/${output_name}_properpair.bam &&
 	
 	# Sort file by name
 	echo 'sorting'
