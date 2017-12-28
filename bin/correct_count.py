@@ -16,10 +16,22 @@ import count_to_cpm
 import distribute_counts
 import distribute_multireads
 import subprocess
+import distribute_embedded_counts as dist_emb
+import gtf
 
 
+def read_gtf(gtf_file):
+    df_gtf = gtf.dataframe(gtf_file)
+    df_gtf = df_gtf[
+        ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
+         'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
+    df_gtf['seqname'] = df_gtf['seqname'].map(str)
+    df_gtf['start'] = df_gtf['start'].map(int)
+    df_gtf['end'] = df_gtf['end'].map(int)
+    return df_gtf
 
-def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bamfile, R_opt):
+
+def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bamfile, R_opt, feature):
     command = "featureCounts " \
               "--minOverlap %d " \
               "--largestOverlap " \
@@ -30,27 +42,44 @@ def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bam
               "-a %s " \
               "-o %s " \
               "%s " \
+              "%s " \
               "-B " \
-              "%s" % (minOverlap, strand, thread, paired, gtf_file, output_prefix,R_opt, bamfile)
+              "%s" % (minOverlap, strand, thread, paired, gtf_file, output_prefix,R_opt, feature, bamfile)
     x = os.system(command)
     return x
 
+def extract_multi(output_dir, output, bamfile):
+    output_name = os.path.basename(output)
+    print('Extracting multimapped reads')
+    fetch_header = 'samtools view -H %s > %s/multi_%s.sam'%(bamfile, output_dir, output_name)
+    x = os.system(fetch_header)
+    if x!=0:
+        sys.exit('fetch_header exit status %d'%x)
+    fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vw 'NH:i:1' >> %s/multi_%s.sam"%(bamfile, output_dir,
+                                                                                                output_name)
+    x = os.system(fetch_multi)
+    if x!=0:
+        if x == 256:
+            print('Input file does not have multimapping read, skipping coco multi')
+            return x
+        else:
+            sys.exit('fetch_multi exit status %d' % x)
+    samtobam = 'samtools view -b %s/multi_%s.sam > %s/multi_%s.bam'%(output_dir,output_name, output_dir,output_name)
+    print(samtobam)
+    x = os.system(samtobam)
+    if x!=0:
+        sys.exit('samtobam exit status %d'%x)
+    os.remove('%s/multi_%s.sam' % (output_dir, output_name))
+    return x
 
-def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, unique_counts, output_dir, R_opt, v, chunksize):
+
+def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, infile,
+               unique_counts, output_dir, R_opt, v, chunksize, feature,ftype, df_gtf, df_gtf_intron):
     os.chdir(output_dir)
+    output_name = os.path.basename(output)
     if not unique_counts:
         sys.exit('multiOnly requires the option -u to be set (count matrix from uniquely mapped reads)')
-    output_name = os.path.basename(output)
     tests.check_unique_count(unique_counts)
-    print('Extracting multimapped reads')
-    fetch_header = 'samtools view -H %s > %s/multi_%s.sam && '%(bamfile, output_dir, output_name)
-    fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vw 'NH:i:1' >> %s/multi_%s.sam && "%(bamfile, output_dir,
-                                                                                                output_name)
-    samtobam = 'samtools view -b %s/multi_%s.sam > %s/multi_%s.bam &&'%(output_dir,output_name, output_dir,output_name)
-    rm_multisam = 'rm %s/multi_%s.sam'%(output_dir,output_name)
-    x = os.system(fetch_header+fetch_multi+samtobam+ rm_multisam)
-    if x !=0 :
-        sys.exit('extracting multi exit status: %s'%(str(x)))
     command="featureCounts " \
             "--minOverlap %d " \
             "--largestOverlap " \
@@ -62,17 +91,17 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile, un
             "-o %s "\
             "-M "\
             "-R %s " \
+            "%s " \
             "-B " \
-            "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name, R_opt,
-                  'multi_'+output_name+'.bam')
+            "%s" %(minOverlap, strand, thread, paired, gtf_file, 'multi_'+ output_name, R_opt, feature,
+                  infile)
     x = os.system(command)
     if x !=0:
         sys.exit(x)
-    os.remove('%s/multi_%s.bam'%(output_dir,output_name))
     output_file = output_dir+'/'+output_name
-    featurefile = '%s/multi_%s.bam.featureCounts'%(output_dir, output_name)
-    distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, gtf_file,
-                                                output_file, v, chunksize, thread)
+    featurefile = '%s/%s.featureCounts'%(output_dir, os.path.basename(infile))
+    distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, df_gtf,
+                                                output_file, v, chunksize, thread, ftype,df_gtf_intron)
 
 
 def main():
@@ -135,6 +164,7 @@ def main():
         else:
             R_opt_unique = '-R'
         R_opt_multi = ''
+        R_opt_emb =''
     else:
         if R_opt == 'None':
             R_opt_unique = ''
@@ -142,46 +172,98 @@ def main():
         else:
             R_opt_unique = '-R %s'%R_opt
             R_opt_multi = R_opt
+        R_opt_emb = 'CORE'
     print('Using, version %s, -R %s'%(str(v),R_opt))
 
     output_dir = os.path.dirname(output)
-    if output_dir == '':
+    if output_dir == '' or output_dir == '.':
         output_dir = os.getcwd()
+
+    bam_dir = os.path.dirname(bamfile)
+    if bam_dir == '' or bam_dir == '.':
+        bam_dir = os.getcwd()
+        bamfile = os.path.join(bam_dir, bamfile)
 
     if paired != True:
         paired = ''
     else:
         paired = '-p '
 
+    gtf_file_intron = gtf_file.replace('.gtf','.introns.gtf')
+    df_gtf_full = read_gtf(gtf_file)
+    df_gtf_intron = read_gtf(gtf_file_intron)
+
     if count_type =='uniqueOnly':
-        output_file = output_dir + '/' + os.path.basename(output)
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, output_file, bamfile, R_opt_unique)
+        output_file = os.path.join(output_dir, os.path.basename(output))
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, output_file, bamfile, R_opt_unique,'')
         if x!=0 :
             sys.exit(x)
+        # embedded correction
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file_intron,
+                        output_file+'.intron', bamfile, '', '-g transcript_id')
+        if x!=0 :
+            sys.exit(x)
+        #dist_emb....
+        dist_emb.correct_embedded(df_gtf_intron, output_file, output_file + '.intron',
+                                  output_file + '_final',count_type)
+
 
     elif count_type=='multiOnly':
-        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile,
-                   unique_counts, output_dir, R_opt_multi, v, chunksize)
+        x = extract_multi(output_dir, output, bamfile)
+        if x == 0:
+            coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile,
+                       unique_counts, output_dir, R_opt_multi, v, chunksize,'','gene', df_gtf_full, None)
+            coco_multi(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
+                       output+'.intron', bamfile, unique_counts, output_dir, R_opt_emb, v, chunksize,'-g transcript_id',
+                       'intron',df_gtf_full, df_gtf_intron)
+            os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
+            dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
+                                      output_dir + os.path.basename(output) + '_final', count_type)
 
 
     elif count_type == 'both':
         #For both, default.
         unique_output = output_dir+'/unique_'+os.path.basename(output)
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique)
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique,'')
         if x != 0:
             sys.exit(x)
-        coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile,
-                   unique_output, output_dir, R_opt_multi, v, chunksize)
+        # embedded correction
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
+                        unique_output+'.intron', bamfile, '', '-g transcript_id')
+        if x != 0:
+            sys.exit(x)
+
+        x = extract_multi(output_dir, output, bamfile)
+        multibam = '%s/multi_%s.bam' % (output_dir, os.path.basename(output))
+        if x == 0:
+            coco_multi(minOverlap, strand, thread, paired, gtf_file_intron,
+                       output + '.intron', multibam, unique_output, output_dir, R_opt_emb, v, chunksize,
+                       '-g transcript_id', 'intron', df_gtf_full, df_gtf_intron)
+            intronfile = '%s/multi_%s.bam.featureCounts' % (output_dir, os.path.basename(output))
+            newintronfile = '%s/multi_%s.intron.bam.featureCounts' % (output_dir, os.path.basename(output))
+            os.rename(intronfile, newintronfile)
+            coco_multi(minOverlap, strand, thread, paired, gtf_file, output, multibam,
+                       unique_output, output_dir, R_opt_multi, v, chunksize,'','gene', df_gtf_full, None)
+
+            os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
+        else:
+            os.rename(unique_output, os.path.join(output_dir,os.path.basename(output)))
+            os.rename(unique_output+'.intron', os.path.join(output_dir, os.path.basename(output)+'.intron'))
+            count_type = 'uniqueOnly'
+        dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
+                                  os.path.join(output_dir,os.path.basename(output)+'_final'), count_type)
 
     else:
         sys.exit(1)
 
     if count_type !='uniqueOnly' and R_opt == 'None':
-        featurefile = '%s/multi_%s.bam.featureCounts'%(output_dir, os.path.basename(output))
-        os.remove(featurefile)
+        genefile = '%s/multi_%s.bam.featureCounts'%(output_dir, os.path.basename(output))
+        intronfile = '%s/multi_%s.intron.bam.featureCounts' % (output_dir, os.path.basename(output))
+        os.remove(genefile)
+        os.remove(intronfile)
 
     if rawonly!=True:
-        count_to_cpm.add_pm_counts(output, gtf_file, bamfile, count_type)
+        count_to_cpm.add_pm_counts(output, df_gtf_full, bamfile, count_type)
     print('coco cc finished successfully')
 
 if __name__ == '__main__':

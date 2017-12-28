@@ -1,5 +1,4 @@
 import pandas as pd
-import gtf
 import sys
 import math
 import os
@@ -22,40 +21,25 @@ def distribute_counts(df, df_unique):
 def read_count_matrix(count_file):
     df= pd.read_csv(count_file, sep='\t', comment='#',
                     names=['gene_id', 'seqname', 'start', 'end', 'strand', 'length', 'accumulation'])
-    df = df.drop(['seqname', 'start', 'end', 'strand', 'length'], axis=1)
+    df = df.drop(['seqname', 'start', 'end', 'strand'], axis=1)
     df['accumulation'] = pd.to_numeric(df['accumulation'],
                                        errors='coerce')  # if header in file, column name will be changed to NaN,
     df = df.dropna(axis=0)  # and row will be removed
     return df
 
 
-def read_corefile(corefile, colnames):
-    # colnames must contain 'QNAME','gene_id','status' and'nb_targets'
+def read_corefile(corefile, v_subread):
+    if v_subread >= 'v1.5.3':
+        colnames = ['QNAME', 'status', 'nb_targets', 'gene_id']
+    else:
+        colnames = ['QNAME', 'status', 'gene_id', 'nb_targets']
     df = pd.read_csv(corefile, names=colnames, sep='\t')
     df = df[df['status']=='Assigned']
     df = df.drop(['status','nb_targets'], axis=1)
     return df
 
 
-def unique_counts(gtf_file, unique_file):
-    if gtf_file.endswith('.gtf'):
-        print('Reading gtf')
-    else:
-        print('Annotation file:',gtf_file)
-        print('error: Wrong annotation format. Only .gtf files are accepted. Filename must contain ".gtf" extension.')
-        sys.exit(1)
-    try:
-        df_gtf=gtf.dataframe(gtf_file)
-        df_gtf = df_gtf[
-            ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
-             'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
-        df_gtf['seqname'] = df_gtf['seqname'].map(str)
-        df_gtf['start'] = df_gtf['start'].map(int)
-        df_gtf['end'] = df_gtf['end'].map(int)
-    except:
-        print("Error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene"
-              "transfer format (.gtf) and respects Ensembl's format.")
-        sys.exit(1)
+def unique_counts(df_gtf, unique_file):
     df_gtf = df_gtf[df_gtf.feature == 'gene']
     df_gtf = df_gtf.drop(['seqname', 'source', 'feature', 'start', 'end', 'strand', 'transcript_id', 'exon_number',
                           'transcript_name', 'transcript_biotype', 'transcript_support_level','gene_biotype',
@@ -144,22 +128,30 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
             sys.exit('sam to bam exited with status : %d'%x)
     return df_count
 
-def distribute_multireads(featurefile, uniquefile, R_opt, gtf_file, output_file, v_subread, chunksize, nb_threads):
-    df_unique = unique_counts(gtf_file, uniquefile)
+def distribute_multireads(featurefile, uniquefile, R_opt, df_gtf, output_file, v_subread, chunksize, nb_threads, ftype,
+                          gtf_intron):
+    df_unique = unique_counts(df_gtf, uniquefile)
+    output_col = ['gene_id','tot']
     if R_opt=='SAM' or R_opt =='BAM':
         df_dist = distribute_samfile(featurefile, chunksize, df_unique, nb_threads, R_opt)
     else:
-        if v_subread >= 'v1.5.3':
-            colnames = ['QNAME','status','nb_targets','gene_id']
-        else:
-            colnames = ['QNAME', 'status', 'gene_id', 'nb_targets']
-        print(colnames)
-        df_multi = read_corefile(featurefile, colnames)
+        df_multi = read_corefile(featurefile, v_subread)
+        if ftype == 'intron':
+            output_col = ['transcript_id','tot','length']
+            df_multi = df_multi.rename(columns={'gene_id':'transcript_id'})
+            gtf_intron = gtf_intron[gtf_intron.feature=='transcript']
+            df_multi = df_multi.merge(gtf_intron[['gene_id','transcript_id']], on='transcript_id')
         df_dist = distribute_counts(df_multi, df_unique)
     df_dist = df_dist.fillna(0)
-
-    df_group = df_dist.groupby('gene_id').dist_counts.sum().reset_index()
-    print('merge df multi unique')
-    df_tot = pd.merge(df_group,df_unique, on='gene_id')
+    if ftype=='intron':
+        del df_unique
+        df_group = df_dist.groupby('transcript_id').dist_counts.sum().reset_index()
+        df_unique_intron = read_count_matrix(uniquefile+'.intron',)
+        df_unique_intron = df_unique_intron.rename(columns={'gene_id':'transcript_id'})
+        df_tot = pd.merge(df_group, df_unique_intron, on='transcript_id', how='outer')
+    else :
+        df_group = df_dist.groupby('gene_id').dist_counts.sum().reset_index()
+        df_tot = pd.merge(df_group,df_unique, on='gene_id', how='outer')
+    df_tot = df_tot.fillna(0)
     df_tot['tot'] = df_tot.accumulation + df_tot.dist_counts
-    df_tot[['gene_id','tot']].to_csv(output_file, header=False, index=False, sep='\t')
+    df_tot[output_col].to_csv(output_file, header=False, index=False, sep='\t')
