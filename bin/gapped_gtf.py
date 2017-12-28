@@ -171,10 +171,10 @@ def fix_gene_and_transcript_size(df_gtf,dexon):
     del df_gtf['min_start'],df_gtf['max_end']
     return df_gtf
 
-def build_gapped_gtf(df_gtf,dexon,output):
-    df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
+def build_gapped_gtf(df_gtf,output):
+
     print('Building correct_annotation gtf...')
-    df_gtf=pd.concat([df_gtf,dexon])
+
     df_gtf['exon_number']=df_gtf['exon_number'].fillna(value=0,axis=0).map(int).map(str)
     df_gtf.loc[df_gtf['feature'] == 'exon','feature']='zexon'   #Makes proper gtf sorting simpler
     df_gtf.loc[df_gtf['feature'] == 'gene','transcript_id']='A' #Makes proper gtf sorting simpler
@@ -193,13 +193,193 @@ def build_gapped_gtf(df_gtf,dexon,output):
     print('All done!')
 
 
-def output_emb_genes_and_host(dgene_embedded,dgene_host,
-                           output='/tmp/output.csv'):
-    dIntersect=intersect(dgene_embedded.rename(columns={'gene_id':'embedded_id'}),dgene_host.rename(columns={'gene_id':'host_id'}),name=('embedded_id','host_id'),option='')
-    dIntersect=dIntersect[dIntersect['overlap'] != -1][['seqname','start','end','strand','embedded_id','host_id']]
-    dIntersect.to_csv(path_or_buf=output,
-                          index=False, sep='\t', header=True)
+def get_closest_feature(df_gtf):
+    df = df_gtf[['seqname','gene_id','start','end']].copy(deep=True)
+    df = df.sort_values(['seqname','end'])
+    df['prev_end'] = df.end.shift(1)
+    df = df.sort_values(['seqname','start'])
+    df['next_start'] = df.start.shift(-1)
+    return df
 
+def fetch_overlapping_intron(df_intersect, df_gtf):
+    list_emb = df_intersect.gene_id.unique()
+    df_closest_plus = get_closest_feature(df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand=='+')])
+    df_closest_minus =  get_closest_feature(df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand=='-')])
+    df_closest = pd.concat([df_closest_plus,df_closest_minus], ignore_index=True)
+    df_closest = df_closest[df_closest.gene_id.isin(list_emb)]
+    df_closest[['prev_end','next_start']] = df_closest[['prev_end','next_start']].astype(int)
+    df_closest = df_closest.rename(columns={'gene_id':'gene_id_emb'})
+    df_closest.drop(['seqname','start','end'],axis=1, inplace=True)
+    df_intersect = df_intersect.rename(columns={'start_2': 'start_emb', 'end_2': 'end_emb'})
+    df_merged = pd.merge(df_intersect[['gene_id', 'exon_id', 'start_emb', 'end_emb']], df_gtf, on='exon_id',
+                         suffixes=['_emb', '_host'])
+
+    df_merged['over5p'] = 0
+    df_merged['over3p'] = 0
+    df_merged.loc[(df_merged.start_emb > df_merged.start) & (df_merged.start_emb <= df_merged.end), 'over5p'] = 1
+    df_merged.loc[(df_merged.end_emb >= df_merged.start) & (df_merged.end_emb < df_merged.end), 'over3p'] = 1
+    df_contained = df_merged[(df_merged.over5p == 0) & (df_merged.over3p == 0)].copy(deep=True)
+    df_contained=df_contained.rename(columns={'gene_id':'gene_id_host'})
+    df_contained.drop(['over3p', 'over5p'],axis=1, inplace=True)
+    df_temp = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)[
+        'start_emb', 'end_emb', 'over5p', 'over3p'].max()
+
+    df_temp = df_temp.merge(df_temp[['gene_id_emb', 'gene_id_host']], on='gene_id_host', suffixes=['', '_other'])
+    df_overlap = df_temp[['gene_id_emb', 'gene_id_host', 'over5p', 'over3p']].copy(deep=True)
+    df_temp.drop(['over5p', 'over3p'], axis=1, inplace=True)
+    df_temp = df_temp[df_temp['gene_id_emb'] != df_temp['gene_id_emb_other']]
+    df_temp = df_temp.merge(df_gtf[df_gtf.feature == 'exon'], left_on='gene_id_emb_other', right_on='gene_id')
+    df_temp.drop(['gene_id_emb_other'],axis=1, inplace=True)
+    df_merged = df_merged[(df_merged.over5p != 0) | (df_merged.over3p != 0)]
+    df_paired = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)['start_emb', 'end_emb'].last()
+    df_paired = df_paired.merge(df_gtf[df_gtf.feature == 'exon'], left_on='gene_id_host', right_on='gene_id')
+    df_paired = pd.concat([df_paired, df_temp, df_contained])
+    del df_temp, df_contained
+    df_paired = df_paired.merge(df_overlap, on=['gene_id_emb', 'gene_id_host'])
+    del df_overlap
+    df_paired = df_paired.merge(df_closest, on='gene_id_emb')
+    del df_closest
+    df_paired['diff5p_intron_all'] = df_paired.start_emb - df_paired.prev_end
+    df_paired['diff3p_intron_all'] = df_paired.next_start - df_paired.end_emb
+    df_paired.drop(['prev_end','next_start'],axis=1,inplace=True)
+    df_paired['diff5p_intron_host'] = df_paired.start_emb - df_paired.end
+    df_paired['diff3p_intron_host'] = df_paired.start - df_paired.end_emb
+    df_paired['diff5p_exon'] = df_paired.start_emb - df_paired.start
+    df_paired['diff3p_exon'] = df_paired.end - df_paired.end_emb
+    df_paired.loc[(df_paired['diff5p_intron_host'] <= 0) & (df_paired['over5p'] != 0), 'diff5p_intron_host'] = 10E7
+    df_paired.loc[(df_paired['diff3p_intron_host'] <= 0) & (df_paired['over3p'] != 0), 'diff3p_intron_host'] = 10E7
+    df_paired.loc[(df_paired['diff5p_intron_all'] <= 0) & (df_paired['over5p'] != 0), 'diff5p_intron_all'] = 10E7
+    df_paired.loc[(df_paired['diff3p_intron_all'] <= 0) & (df_paired['over3p'] != 0), 'diff3p_intron_all'] = 10E7
+    df_paired.loc[(df_paired['diff5p_exon'] <= 0) & (df_paired['over5p'] != 0), 'diff5p_exon'] = 10E7
+    df_paired.loc[(df_paired['diff3p_exon'] <= 0) & (df_paired['over3p'] != 0), 'diff3p_exon'] = 10E7
+
+    df_paired['min5p'] = df_paired[['diff5p_intron_host', 'diff5p_exon','diff5p_intron_all']].min(axis=1)
+    df_paired['min3p'] = df_paired[['diff3p_intron_host', 'diff3p_exon','diff3p_intron_all']].min(axis=1)
+    df_grouped = df_paired.groupby(['gene_id_emb', 'start_emb', 'end_emb', 'over5p', 'over3p'])[
+         'gene_id_host', 'min5p', 'min3p'].min().reset_index()
+    del df_paired
+    df_grouped['left_start'] = df_grouped.start_emb - df_grouped.min5p.astype(int) + 1
+    df_grouped['left_end'] = df_grouped.start_emb - 1
+    df_grouped['right_start'] = df_grouped.end_emb + 1
+    df_grouped['right_end'] = df_grouped.end_emb + df_grouped.min3p.astype(int) -1
+    df_grouped['intron_type'] = '.retained_intron'
+    df_grouped.loc[(df_grouped['over5p'] != 0) & (df_grouped['over3p'] == 0), ['right_start', 'right_end']] = -1
+    df_grouped.loc[(df_grouped['over5p'] == 0) & (df_grouped['over3p'] != 0), ['left_start', 'left_end']] = -1
+    df_grouped.loc[(df_grouped['over5p'] == 0) & (df_grouped['over3p'] == 0), 'left_start'] = df_grouped.end_emb \
+                                                                                            + df_grouped.min3p.astype(int)
+    df_grouped.loc[(df_grouped['over5p'] == 0) & (df_grouped['over3p'] == 0), 'left_end'] = df_grouped.start_emb \
+                                                                                              - df_grouped.min5p.astype(int)
+    df_grouped.loc[(df_grouped['over5p'] == 0) & (df_grouped['over3p'] == 0), ['right_end','right_start']] = -1
+    df_grouped.loc[(df_grouped['over5p'] == 0) & (df_grouped['over3p'] == 0), 'intron_type'] = '.contained_exon'
+    df_fakehost = df_grouped[df_grouped.intron_type == '.contained_exon'].copy(deep=True)
+    if not df_fakehost.empty:
+        df_fakehost['left_start'] = df_fakehost.start_emb + 1
+        df_fakehost['left_end'] = df_fakehost.end_emb + df_fakehost.min3p.astype(int) - 1
+        df_fakehost['right_end'] = df_fakehost.end_emb - 1
+        df_fakehost['right_start'] = df_grouped.start_emb - df_grouped.min5p.astype(int) + 1
+        df_fakehost['intron_type'] = '.fakehost'
+        df_grouped = pd.concat([df_grouped,df_fakehost],ignore_index=True)
+    df_grouped.drop(['over5p', 'over3p', 'min5p', 'min3p', 'start_emb', 'end_emb'], axis=1, inplace=True)
+    df_grouped.loc[df_grouped.left_start >= df_grouped.left_end,['left_start','left_end']] = -1
+    df_grouped.loc[df_grouped.right_start >= df_grouped.right_end, ['right_start', 'right_end']] = -1
+    df_grouped['trx_start'] = df_grouped.left_start
+    df_grouped['trx_end'] = df_grouped.right_end
+    df_grouped.loc[df_grouped.left_start ==-1, 'trx_start'] = df_grouped.right_start
+    df_grouped.loc[df_grouped.right_end ==-1, 'trx_end'] = df_grouped.left_end
+    df_left = df_grouped[['gene_id_emb', 'gene_id_host', 'left_start', 'left_end', 'intron_type','trx_start','trx_end']].copy(deep=True)
+    df_right = df_grouped[['gene_id_emb', 'gene_id_host', 'right_start', 'right_end', 'intron_type','trx_start','trx_end']].copy(
+        deep=True)
+    del df_grouped
+    df_left['exon_type'] = '.left'
+    df_left = df_left.rename(columns={'left_start': 'exon_start', 'left_end': 'exon_end'})
+    df_right['exon_type'] = '.right'
+    df_right = df_right.rename(columns={'right_start': 'exon_start', 'right_end': 'exon_end'})
+    df_final = pd.concat([df_right, df_left])
+    df_final = df_final[(df_final.exon_start!=-1)]
+    return df_final
+
+
+def create_gtf(df_intron, df_gtf, output):
+    df_intron['temp_col'] = df_intron.gene_id_host
+    df_intron.loc[(df_intron.intron_type == '.fakehost'),'gene_id_host'] = df_intron.gene_id_emb
+    df_intron.loc[(df_intron.intron_type == '.contained_exon') |
+                  (df_intron.intron_type == '.fakehost'), 'gene_id_emb'] = df_intron.temp_col
+    df_intron.drop(['temp_col'], axis=1, inplace=True)
+
+    gene_cols = ['gene_id','gene_name','gene_biotype','seqname','strand','source']
+    gene_gtf = df_gtf[(df_gtf.feature=='gene') &
+                        (df_gtf.gene_id.isin(df_intron.gene_id_host.unique()))][gene_cols]
+    df_new_gtf = df_gtf[(df_gtf.feature=='gene') &
+                        (df_gtf.gene_id.isin(df_intron.gene_id_host.unique()))].copy(deep=True)
+    df_intron['gene_start'] = df_intron.groupby(['gene_id_host'])['trx_start'].transform('min')
+    df_intron['gene_end'] = df_intron.groupby(['gene_id_host'])['trx_end'].transform('max')
+    df_new_gtf = df_new_gtf.merge(df_intron[['gene_id_host','gene_start','gene_end']],
+                                  left_on='gene_id', right_on='gene_id_host')
+    df_new_gtf['start'] = df_new_gtf['gene_start']
+    df_new_gtf['end'] = df_new_gtf['gene_end']
+    df_new_gtf = df_new_gtf.drop(['gene_id_host','gene_start','gene_end'],axis=1)
+    emb_gtf = df_gtf[df_gtf.gene_id.isin(df_intron[df_intron.intron_type.str.contains('intron')].gene_id_emb.unique())].copy(deep=True)
+    df_new_gtf = pd.concat([df_new_gtf, emb_gtf])
+    df_intron = df_intron.merge(df_gtf[df_gtf.feature == 'gene'][['gene_id', 'gene_name']], left_on='gene_id_emb',
+                                right_on='gene_id')
+    df_intron = df_intron.rename(columns={'gene_name': 'gene_name_emb'})
+
+    df_intron['transcript_id'] = df_intron.gene_id_emb + df_intron.intron_type
+    df_intron['transcript_name'] = df_intron.gene_name_emb + df_intron.intron_type
+    df_intron['exon_id'] = df_intron.gene_id_emb + df_intron.exon_type
+    df_intron['transcript_support_level'] = '1'
+    df_intron['transcript_biotype'] = 'processed_transcript'
+    df_trx = df_intron[['transcript_id','transcript_name','trx_start','trx_end','gene_id_host','transcript_biotype',
+                        'transcript_support_level']]
+    df_trx.drop_duplicates(inplace=True)
+    df_trx = df_trx.rename(columns={'gene_id_host':'gene_id','trx_start':'start','trx_end':'end'})
+    df_trx['feature'] = 'transcript'
+    df_trx = df_trx.merge(gene_gtf, on='gene_id')
+    df_exon = df_intron[['transcript_id','transcript_name','exon_start','exon_end','gene_id_host','transcript_biotype',
+                        'transcript_support_level','exon_id']]
+    del df_intron
+    df_exon = df_exon.rename(columns={'gene_id_host': 'gene_id', 'exon_start': 'start', 'exon_end': 'end'})
+    df_exon = df_exon.merge(gene_gtf, on='gene_id')
+    df_exon['feature'] = 'exon'
+    df_exon = fix_exon_number(df_exon)
+    
+    df_new_gtf = pd.concat([df_new_gtf,df_trx,df_exon])
+    df_new_gtf.drop_duplicates(inplace=True)
+    build_gapped_gtf(df_new_gtf, output)
+
+
+def fetch_closest_exons(df_intersect, df_gtf):
+    df_intersect['gene_length'] = df_intersect.end - df_intersect.start
+    df_selected = df_intersect[df_intersect.groupby(['gene_id_emb']).gene_length.transform('min') == df_intersect.gene_length][['gene_id','gene_id_emb']]
+    df_selected = df_selected.rename(columns={'gene_id':'gene_id_host'})
+    list_emb = df_intersect.gene_id_emb.unique()
+    df = get_closest_feature(df_gtf)
+    df = df[df.gene_id.isin(list_emb)]
+    df['left_start'] = df.prev_end + 1
+    df['left_end'] = df.start - 1
+    df['right_start'] = df.end + 1
+    df['right_end'] = df.next_start - 1
+    df = df.drop(['start','end','seqname','prev_end','next_start'],axis=1)
+    df = df.merge(df_selected, left_on='gene_id', right_on='gene_id_emb')
+    df[['left_start', 'left_end','right_start','right_end']] = df[['left_start', 'left_end','right_start','right_end']].astype(int)
+    df.loc[df.right_start >= df.right_end, ['right_start','right_end']] = -1
+    df.loc[df.left_start >= df.left_end, ['left_start','left_end']] = -1
+    df['trx_start'] = df.left_start
+    df['trx_end'] = df.right_end
+    df.loc[df.trx_start == -1, 'trx_start'] = df.right_start
+    df.loc[df.trx_end == -1, 'trx_end'] = df.left_end
+    df['intron_type'] = '.spliced_intron'
+    df_left = df[['gene_id_emb', 'gene_id_host', 'left_start', 'left_end', 'intron_type','trx_start','trx_end']].copy(deep=True)
+    df_right = df[['gene_id_emb', 'gene_id_host', 'right_start', 'right_end', 'intron_type','trx_start','trx_end']].copy(
+        deep=True)
+    del df
+    df_left['exon_type'] = '.left'
+    df_left = df_left.rename(columns={'left_start': 'exon_start', 'left_end': 'exon_end'})
+    df_right['exon_type'] = '.right'
+    df_right = df_right.rename(columns={'right_start': 'exon_start', 'right_end': 'exon_end'})
+    df_final = pd.concat([df_right, df_left])
+    df_final = df_final[(df_final.exon_start != -1)]
+    return df_final
 
 
 def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
@@ -227,9 +407,13 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     except:
         print("error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene transfer format (.gtf) and comes from Ensembl.")
         sys.exit(1)
+    if output == 'None':
+        output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
     df_gtf=df_gtf[df_gtf['feature'].isin(['gene','transcript','exon'])==True]
+    df_gtf['exon_id'] = 'NaN'
+    df_gtf.loc[df_gtf['feature']=='exon','exon_id'] = df_gtf['transcript_id'] + '.' + df_gtf['exon_number'].map(str).str.split('.').str.get(0)
     dgene=df_gtf[df_gtf.feature == 'gene']
     dgene['start']=dgene['start'].map(int)
     dgene['end']=dgene['end'].map(int)
@@ -237,29 +421,38 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     #dgene=make_group_biotype(dgene)
     dgene_embedded=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == True]
     dgene_host=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == False]
-    output_emb_genes_and_host(dgene_embedded,dgene_host,output=gtf_file.replace('.gtf','.emb_vs_host.csv'))
 
     dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
-    dexon_host['exon_id']=dexon_host['transcript_id']+'.'+dexon_host['exon_number'].map(int).map(str)
     dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
-    dexon_not_host['exon_id']=dexon_not_host['transcript_id']+'.'+dexon_not_host['exon_number'].map(int).map(str)
     dIntersect=intersect(dexon_host,dgene_embedded,name=('exon_id','gene_id'))
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
     del dIntersect['overlap']
+    df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
+    emb_genes = df_overlapping_intron.gene_id_emb.unique()
+    dIntersect_gene = intersect(dgene_host,dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)],
+                                name=('gene_id','gene_id'))
+    dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
+    del dIntersect_gene['overlap']
+    dIntersect_gene = dIntersect_gene.rename(columns={'gene_id.1':'gene_id_emb'})
+    df_minus = df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand == '-')].copy(deep=True)
+    df_plus = df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand == '+')].copy(deep=True)
+    df_intron_minus = fetch_closest_exons(dIntersect_gene, df_minus)
+    df_intron_plus = fetch_closest_exons(dIntersect_gene, df_plus)
+    df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True)
+    create_gtf(df_intron,df_gtf, output.replace('.gtf','.introns.gtf'))
     dexon_slice=drill_an_exon(dIntersect,dexon_host)
     dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
     dexon_host=pd.concat([dexon_host,dexon_slice])
     dexon=pd.concat([dexon_host,dexon_not_host])
     dexon=fix_exon_number(dexon)
-    if output =='None':
-        output=gtf_file.replace('.gtf','.correct_annotation.gtf')
-    build_gapped_gtf(df_gtf,dexon,output)
+
+    df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
+    df_gtf=pd.concat([df_gtf,dexon])
+    build_gapped_gtf(df_gtf,output)
 
 if __name__=='__main__':
     if len(sys.argv)>1:
         correct_annotation(gtf_file=sys.argv[1])
     else:
-        correct_annotation(gtf_file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/Rsubread_test/CoCo/human_ensembl_87.gtf',output='dirk')
-
-        #print('error: Not enough arguments!')
-        #sys.exit(1)
+        print('error: Not enough arguments!')
+        sys.exit(1)
