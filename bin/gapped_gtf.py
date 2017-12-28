@@ -305,8 +305,6 @@ def create_gtf(df_intron, df_gtf, output):
     df_intron.loc[(df_intron.intron_type == '.contained_exon') |
                   (df_intron.intron_type == '.fakehost'), 'gene_id_emb'] = df_intron.temp_col
     df_intron.drop(['temp_col'], axis=1, inplace=True)
-    print(df_intron[:5])
-    print(df_intron[:5])
 
     gene_cols = ['gene_id','gene_name','gene_biotype','seqname','strand','source']
     gene_gtf = df_gtf[(df_gtf.feature=='gene') &
