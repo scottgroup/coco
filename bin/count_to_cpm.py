@@ -44,14 +44,14 @@ def get_true_length_from_gtf(df_gtf):
     return df_gtf
 
 
-def add_pm_counts(count_file,gtf_file,bam_file, count_type):
+def add_pm_counts(count_file,df_gtf,bam_file, count_type):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
     Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of
     that script by specifying the --rawOnly option in CorrectCount.
 
     :param count_file: featureCounts count file.
-    :param gtf_file: annotation file in gtf format.
+    :param df_gtf: dataframe containing the gtf information.
     :param bam_file: bam file, used to calculate max read size.
     """
     read_bam = ('samtools','view', bam_file)
@@ -69,18 +69,6 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
         print("error: There was a problem while reading the bam file to get the max read size.\n"
               "command performed: 'samtools view %s | head -n 10| cut -f 10 | wc -L'\n"
               "output obtained: %s" %(bam_file,max_read_size))
-        sys.exit(1)
-    try:
-        df_gtf=dataframe(gtf_file)
-        df_gtf = df_gtf[
-            ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
-             'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
-        df_gtf['seqname'] = df_gtf['seqname'].map(str)
-        df_gtf['start'] = df_gtf['start'].map(int)
-        df_gtf['end'] = df_gtf['end'].map(int)
-    except:
-        print('error: gtf file %s could not be read. Please specify a proper annotation file in gene transfert '
-              'format (.gtf) obtained from Ensembl.' %(gtf_file))
         sys.exit(1)
     df_gtf = get_true_length_from_gtf(df_gtf)
     df_gtf = df_gtf[['gene_id', 'gene_name', 'gene_biotype', 'length']]

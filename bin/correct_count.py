@@ -65,7 +65,6 @@ def extract_multi(output_dir, output, bamfile):
         else:
             sys.exit('fetch_multi exit status %d' % x)
     samtobam = 'samtools view -b %s/multi_%s.sam > %s/multi_%s.bam'%(output_dir,output_name, output_dir,output_name)
-    print(samtobam)
     x = os.system(samtobam)
     if x!=0:
         sys.exit('samtobam exit status %d'%x)
@@ -203,7 +202,6 @@ def main():
                         output_file+'.intron', bamfile, '', '-g transcript_id')
         if x!=0 :
             sys.exit(x)
-        #dist_emb....
         dist_emb.correct_embedded(df_gtf_intron, output_file, output_file + '.intron',
                                   output_file + '_final',count_type)
 
@@ -263,7 +261,7 @@ def main():
         os.remove(intronfile)
 
     if rawonly!=True:
-        count_to_cpm.add_pm_counts(output, df_gtf_full, bamfile, count_type)
+        count_to_cpm.add_pm_counts(os.path.join(output_dir,os.path.basename(output)+'_final'), df_gtf_full, bamfile, count_type)
     print('coco cc finished successfully')
 
 if __name__ == '__main__':
