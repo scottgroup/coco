@@ -319,7 +319,14 @@ def create_gtf(df_intron, df_gtf, output):
     df_new_gtf['end'] = df_new_gtf['gene_end']
     df_new_gtf = df_new_gtf.drop(['gene_id_host','gene_start','gene_end'],axis=1)
     emb_gtf = df_gtf[df_gtf.gene_id.isin(df_intron[df_intron.intron_type.str.contains('intron')].gene_id_emb.unique())].copy(deep=True)
-    df_new_gtf = pd.concat([df_new_gtf, emb_gtf])
+    emb_trx  = emb_gtf[emb_gtf.feature=='transcript'].copy(deep=True)
+    emb_gene = emb_gtf[emb_gtf.feature=='gene']
+    emb_trx['length'] = emb_trx.end - emb_trx.start
+    emb_trx = emb_trx.sort_values('length',ascending=False)
+    emb_trx.drop_duplicates(subset='gene_id', keep='first', inplace=True) #keep longest transcript only
+    emb_exon = emb_gtf[(emb_gtf.feature=='exon') & (emb_gtf.transcript_id.isin(emb_trx.transcript_id.unique()))]
+    df_new_gtf = pd.concat([df_new_gtf, emb_gene, emb_trx, emb_exon])
+    del emb_trx, emb_exon, emb_gene, emb_gtf
     df_intron = df_intron.merge(df_gtf[df_gtf.feature == 'gene'][['gene_id', 'gene_name']], left_on='gene_id_emb',
                                 right_on='gene_id')
     df_intron = df_intron.rename(columns={'gene_name': 'gene_name_emb'})
@@ -434,8 +441,8 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
     del dIntersect_gene['overlap']
     dIntersect_gene.columns.values[-1] = 'gene_id_emb'
-    df_minus = df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand == '-')].copy(deep=True)
-    df_plus = df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand == '+')].copy(deep=True)
+    df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]])
+    df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]])
     df_intron_minus = fetch_closest_exons(dIntersect_gene, df_minus)
     df_intron_plus = fetch_closest_exons(dIntersect_gene, df_plus)
     df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True)
