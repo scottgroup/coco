@@ -436,11 +436,12 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     del dIntersect['overlap']
     df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
     emb_genes = df_overlapping_intron.gene_id_emb.unique()
-    dIntersect_gene = intersect(dgene_host,dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)],
-                                name=('gene_id','gene_id'))
+    other_emb = dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)]
+    other_emb = other_emb.rename(columns={'gene_id':'gene_id_emb'})
+    dIntersect_gene = intersect(dgene_host,other_emb,
+                                name=('gene_id','gene_id_emb'))
     dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
     del dIntersect_gene['overlap']
-    dIntersect_gene.columns.values[-1] = 'gene_id_emb'
     df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]])
     df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]])
     df_intron_minus = fetch_closest_exons(dIntersect_gene, df_minus)
