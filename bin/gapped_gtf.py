@@ -213,12 +213,15 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
                        'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype',
                        'transcript_support_level']]
-        df_gtf['seqname']=df_gtf['seqname'].map(str)
-        df_gtf['start']=df_gtf['start'].map(int)
-        df_gtf['end']=df_gtf['end'].map(int)
-    except:
-        print("error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene transfer format (.gtf) and comes from Ensembl.")
-        sys.exit(1)
+    except KeyError:
+        df_gtf = dataframe(gtf_file)
+        df_gtf = df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
+                         'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype']]
+        df_gtf['transcript_support_level'] = 'None'
+        df_gtf.loc[df_gtf.feature != 'gene', 'transcript_support_level'] = '5'
+    df_gtf['seqname'] = df_gtf['seqname'].map(str)
+    df_gtf['start'] = df_gtf['start'].map(int)
+    df_gtf['end'] = df_gtf['end'].map(int)
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
     df_gtf=df_gtf[df_gtf['feature'].isin(['gene','transcript','exon'])==True]
@@ -244,6 +247,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     dexon=fix_exon_number(dexon)
     if output =='None':
         output=gtf_file.replace('.gtf','.correct_annotation.gtf')
+    df_gtf.loc[df_gtf.gene_name.isnull(), 'gene_name'] = df_gtf.gene_id
     build_gapped_gtf(df_gtf,dexon,output)
 
 if __name__=='__main__':
