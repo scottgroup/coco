@@ -104,10 +104,10 @@ def _get_value(value):
     value = value.strip('"\'')
 
     # Return a list if the value has a comma.
-    if ',' in value:
-        value = re.split(R_COMMA, value)
+    # if ',' in value:
+    #     value = re.split(R_COMMA, value)
     # These values are equivalent to None.
-    elif value in ['', '.', 'NA']:
+    if value in ['', '.', 'NA']:
         return None
 
     return value

@@ -190,7 +190,6 @@ def build_gapped_gtf(df_gtf,output):
     df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame','attribute']]
     df_gtf.to_csv(path_or_buf=output,
                           index=False, sep='\t', header=False, quoting=csv.QUOTE_NONE)
-    print('All done!')
 
 
 def get_closest_feature(df_gtf):
@@ -211,6 +210,9 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_closest = df_closest.rename(columns={'gene_id':'gene_id_emb'})
     df_closest.drop(['seqname','start','end'],axis=1, inplace=True)
     df_intersect = df_intersect.rename(columns={'start_2': 'start_emb', 'end_2': 'end_emb'})
+    # remove overlapping features having the same coordinates
+    df_intersect = df_intersect[(df_intersect.start != df_intersect.start_emb) |
+                                (df_intersect.end != df_intersect.end_emb)]
     df_merged = pd.merge(df_intersect[['gene_id', 'exon_id', 'start_emb', 'end_emb']], df_gtf, on='exon_id',
                          suffixes=['_emb', '_host'])
 
@@ -258,10 +260,10 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_grouped = df_paired.groupby(['gene_id_emb', 'start_emb', 'end_emb', 'over5p', 'over3p'])[
          'gene_id_host', 'min5p', 'min3p'].min().reset_index()
     del df_paired
-    df_grouped['left_start'] = df_grouped.start_emb - df_grouped.min5p.astype(int) + 1
+    df_grouped['left_start'] = df_grouped.start_emb - df_grouped.min5p.astype(int)
     df_grouped['left_end'] = df_grouped.start_emb - 1
     df_grouped['right_start'] = df_grouped.end_emb + 1
-    df_grouped['right_end'] = df_grouped.end_emb + df_grouped.min3p.astype(int) -1
+    df_grouped['right_end'] = df_grouped.end_emb + df_grouped.min3p.astype(int)
     df_grouped['intron_type'] = '.retained_intron'
     df_grouped.loc[(df_grouped['over5p'] != 0) & (df_grouped['over3p'] == 0), ['right_start', 'right_end']] = -1
     df_grouped.loc[(df_grouped['over5p'] == 0) & (df_grouped['over3p'] != 0), ['left_start', 'left_end']] = -1
@@ -356,6 +358,9 @@ def create_gtf(df_intron, df_gtf, output):
 
 
 def fetch_closest_exons(df_intersect, df_gtf):
+    # remove overlapping features having the same coordinates
+    df_intersect = df_intersect[(df_intersect.start != df_intersect.start_2) |
+                                (df_intersect.end != df_intersect.end_2)]
     df_intersect['gene_length'] = df_intersect.end - df_intersect.start
     df_selected = df_intersect[df_intersect.groupby(['gene_id_emb']).gene_length.transform('min') == df_intersect.gene_length][['gene_id','gene_id_emb']]
     df_selected = df_selected.rename(columns={'gene_id':'gene_id_host'})
@@ -411,9 +416,15 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         df_gtf['seqname']=df_gtf['seqname'].map(str)
         df_gtf['start']=df_gtf['start'].map(int)
         df_gtf['end']=df_gtf['end'].map(int)
-    except:
-        print("error: gtf file cannot be converted to dataframe. Make sure the annotation file provided is in gene transfer format (.gtf) and comes from Ensembl.")
-        sys.exit(1)
+    except KeyError:
+        df_gtf=dataframe(gtf_file)
+        df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
+                       'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype']]
+        df_gtf['seqname']=df_gtf['seqname'].map(str)
+        df_gtf['start']=df_gtf['start'].map(int)
+        df_gtf['end']=df_gtf['end'].map(int)
+        df_gtf['transcript_support_level'] = 'None'
+        df_gtf.loc[df_gtf.feature!='gene', 'transcript_support_level'] = '5'
     if output == 'None':
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
@@ -434,9 +445,12 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     dIntersect=intersect(dexon_host,dgene_embedded,name=('exon_id','gene_id'))
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
     del dIntersect['overlap']
-    df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
-    emb_genes = df_overlapping_intron.gene_id_emb.unique()
-    other_emb = dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)]
+    if dIntersect.empty is False:
+        df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
+        emb_genes = df_overlapping_intron.gene_id_emb.unique()
+        other_emb = dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)]
+    else:
+        other_emb = dgene_embedded
     other_emb = other_emb.rename(columns={'gene_id':'gene_id_emb'})
     dIntersect_gene = intersect(dgene_host,other_emb,
                                 name=('gene_id','gene_id_emb'))
@@ -446,17 +460,24 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]])
     df_intron_minus = fetch_closest_exons(dIntersect_gene, df_minus)
     df_intron_plus = fetch_closest_exons(dIntersect_gene, df_plus)
-    df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True)
+    if dIntersect.empty is False:
+        df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True)
+    else:
+        df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True)
     create_gtf(df_intron,df_gtf, output.replace('.gtf','.introns.gtf'))
-    dexon_slice=drill_an_exon(dIntersect,dexon_host)
-    dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
-    dexon_host=pd.concat([dexon_host,dexon_slice])
-    dexon=pd.concat([dexon_host,dexon_not_host])
-    dexon=fix_exon_number(dexon)
+    if dIntersect.empty is False:
+        dexon_slice=drill_an_exon(dIntersect,dexon_host)
+        dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
+        dexon_host=pd.concat([dexon_host,dexon_slice])
+        dexon=pd.concat([dexon_host,dexon_not_host])
+        dexon=fix_exon_number(dexon)
 
-    df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
-    df_gtf=pd.concat([df_gtf,dexon])
+        df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
+        df_gtf=pd.concat([df_gtf,dexon])
+    df_gtf = df_gtf.reset_index()
+    df_gtf.loc[df_gtf.gene_name.isnull(),'gene_name'] = df_gtf.gene_id
     build_gapped_gtf(df_gtf,output)
+    print('All done!')
 
 if __name__=='__main__':
     if len(sys.argv)>1:
