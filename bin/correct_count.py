@@ -119,6 +119,9 @@ def main():
     parser.add_argument("-m", "--minOverlap",
                         help="Minimum overlap a read must have with a feature to be assigned to its associated gene by featureCounts. Default: 10",
                         type=int, default=10)
+    parser.add_argument("-i", "--meanInsertSize",
+                        help="Mean insert size of the alignment file. Used to compute TPM if the insert size is greater than read length. Default: 0",
+                        type=int, default=0)
     parser.add_argument("-p", "--paired",
                         help="Use this option if you work on a paired-end dataset. Used by featureCounts.",
                         action="store_true")
@@ -145,6 +148,7 @@ def main():
 
     strand = args.strand
     minOverlap = args.minOverlap
+    meanInsertSize = args.meanInsertSize
     thread = args.thread
     paired = args.paired
     rawonly = args.rawOnly
@@ -261,7 +265,7 @@ def main():
         os.remove(intronfile)
 
     if rawonly!=True:
-        count_to_cpm.add_pm_counts(os.path.join(output_dir,os.path.basename(output)+'_final'), df_gtf_full, bamfile, count_type)
+        count_to_cpm.add_pm_counts(os.path.join(output_dir,os.path.basename(output)+'_final'), df_gtf_full, bamfile, count_type, mean_insert_size=meanInsertSize)
     print('coco cc finished successfully')
 
 if __name__ == '__main__':
