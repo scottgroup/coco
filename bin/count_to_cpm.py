@@ -45,7 +45,7 @@ def get_true_length_from_gtf(df_gtf):
     return df_gtf
 
 
-def add_pm_counts(count_file,gtf_file,bam_file, count_type):
+def add_pm_counts(count_file,gtf_file,bam_file, count_type, mean_insert_size=100):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
     Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of that script
@@ -95,7 +95,10 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type):
     dcount['cpm'] = (dcount['count'].map(float) / Assigned) * 1E6
     dcount = pd.merge(dcount, df_gtf, how='right', on='gene_id')
     dcount['temp'] = dcount['count'] / dcount['length']
-    dcount.loc[dcount['length'] < max_read_size, 'temp'] = dcount['count'] / max_read_size
+    if max_read_size >= mean_insert_size:
+        dcount.loc[dcount['length'] < max_read_size, 'temp'] = dcount['count'] / max_read_size
+    else:
+        dcount.loc[dcount['length'] < mean_insert_size, 'temp'] = dcount['count'] / mean_insert_size
     sum_temp = dcount['temp'].sum()
     dcount['tpm'] = (dcount['temp'] / sum_temp) * 1E6
     # dcount.loc[dcount['length'] < read_length_dict[exp], 'tpm'] = dcount['cpm']
