@@ -57,11 +57,9 @@ def intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,ke
     del Intersect_dataf['dataf2_file'], Intersect_dataf['strand_2']
     if keep=='name_only':
         Intersect_dataf=Intersect_dataf[[name,name+'_2']]
-    command= "rm %s &&\
-    rm %s && \
-    rm %s" \
-    %(dataf_1_output, dataf_2_output, intersect_output)
-    os.system(command)
+    os.remove(dataf_1_output)
+    os.remove(dataf_2_output)
+    os.remove(intersect_output)
     return Intersect_dataf
 
 
@@ -137,7 +135,6 @@ def fix_exon_number(dexon):
     dataf_dup=pd.DataFrame(data={'transcript_id':unique_keys,
                          'count':dupplicate_quants})
     dexon=pd.merge(dexon,dataf_dup, on='transcript_id', how='left')
-    dexon_temp=dexon[:]
     dexon_temp=dexon.copy(deep=True)
     dexon_temp['old_index']=dexon_temp.index
     dexon_temp=dexon_temp.drop_duplicates(subset='transcript_id')
@@ -427,6 +424,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         df_gtf.loc[df_gtf.feature!='gene', 'transcript_support_level'] = '5'
     if output == 'None':
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
+    outpath=os.path.dirname(output)
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
     df_gtf=df_gtf[df_gtf['feature'].isin(['gene','transcript','exon'])==True]
@@ -442,7 +440,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
 
     dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
     dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
-    dIntersect=intersect(dexon_host,dgene_embedded,name=('exon_id','gene_id'))
+    dIntersect=intersect(dexon_host,dgene_embedded,output=os.path.join(outpath,'Intersect'), name=('exon_id','gene_id'))
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
     del dIntersect['overlap']
     if dIntersect.empty is False:
@@ -452,7 +450,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
     else:
         other_emb = dgene_embedded
     other_emb = other_emb.rename(columns={'gene_id':'gene_id_emb'})
-    dIntersect_gene = intersect(dgene_host,other_emb,
+    dIntersect_gene = intersect(dgene_host,other_emb,output=os.path.join(outpath,'Intersect'),
                                 name=('gene_id','gene_id_emb'))
     dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
     del dIntersect_gene['overlap']
