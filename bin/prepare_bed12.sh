@@ -50,11 +50,11 @@ pairedBamToBed12 -i ${outpath}/${output_name}_properpair.sorted.bam  > ${outpath
 
 rm ${outpath}/${output_name}_properpair.sorted.bam &&
 
-cd $outpath &&
+mkdir -p $outpath/${output_name}_chromo/ &&
 
-mkdir -p $outpath/chromo/ &&
+cd $outpath/${output_name}_chromo/ &&
 
-awk -F '\t' '{print > "chromo/"$1".bed12"}' ${outpath}/${output_name}.bed12 &&
+awk -F '\t' '{print > "$1".bed12"}' ${outpath}/${output_name}.bed12 &&
 
 exit
 

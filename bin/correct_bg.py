@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import multiprocessing as mp
 import subprocess
+import shutil
 
 def prepare_bed12(bamfile, output_dir, output_name, multi):
     command = 'bash %s/prepare_bed12.sh %s %s %s %s'%(os.path.dirname(__file__),bamfile,
@@ -112,13 +113,12 @@ def correct_bed12(df, nb_threads):
     return df_bed12
 
 
-def genome_cov(output_dir, output, genomepath, ucsc):
-    cat_file = 'cat %s/chromo/corrected*.bed12 > %s/corrected_%s.bed12'%(output_dir, output_dir,os.path.basename(output))
+def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
+    cat_file = 'cat %s/%s_chromo/corrected*.bed12 > %s/corrected_%s.bed12'%(output_dir, temp_dir, output_dir, os.path.basename(output))
     x = os.system(cat_file)
     if x !=0 :
         sys.exit('cat exit status: ' + str(x))
-    rm_chromo = 'rm -r %s/chromo/'%(output_dir)
-    os.system(rm_chromo)
+    shutil.rmtree('%s/%s_chromo/' % (output_dir, temp_dir))
     if ucsc is True:
         track_opt = "-trackline -trackopts 'name=\"%s\"'"%(os.path.basename(output))
     else :
