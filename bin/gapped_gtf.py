@@ -53,7 +53,7 @@ def intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,ke
     Intersect_dataf=pd.read_csv(filepath_or_buffer=intersect_output,
                        index_col=False, sep='\t', header=None,
                          names=['seqname','start','end',name[0],score,'strand',
-                                'dataf2_file','start_2','end_2',name[1],'overlap','strand_2'])
+                                'dataf2_file','start_2','end_2',name[1],'overlap','strand_2'], dtype={'seqname':str})
     del Intersect_dataf['dataf2_file'], Intersect_dataf['strand_2']
     if keep=='name_only':
         Intersect_dataf=Intersect_dataf[[name,name+'_2']]

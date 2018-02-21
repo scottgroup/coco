@@ -25,7 +25,7 @@ if [ "True" = "${multi}" ]; then
 	rm ${outpath}/${output_name}_properpair.sorted.sam
 
 elif [ "False" = "${multi}" ]; then
-    echo 'Not sorting hit index';
+        echo 'Not sorting hit index';
 
 	# Keep only properly paired reads
 	samtools view -b -f 0x2 ${bamfile} > ${outpath}/${output_name}_properpair.bam &&
@@ -54,7 +54,7 @@ mkdir -p $outpath/${output_name}_chromo/ &&
 
 cd $outpath/${output_name}_chromo/ &&
 
-awk -F '\t' '{print > "$1".bed12"}' ${outpath}/${output_name}.bed12 &&
+awk -F '\t' '{print > $1".bed12"}' ${outpath}/${output_name}.bed12 &&
 
 exit
 
