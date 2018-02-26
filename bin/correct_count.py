@@ -279,6 +279,8 @@ def main():
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)) + '.intron')
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)))
         os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)))
+        if R_opt == 'SAM' or R_opt == 'BAM':
+            os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output))+'.intron.bam.featureCounts')
 
 
     if count_type !='uniqueOnly' and R_opt == 'None':
@@ -289,7 +291,7 @@ def main():
 
     if rawonly!=True:
         count_to_cpm.add_pm_counts(os.path.join(output_dir,os.path.basename(output)), df_gtf_full, bamfile,
-                                   count_type, mean_insert_size=meanInsertSize)
+                                   mean_insert_size=meanInsertSize)
     print('coco cc finished successfully')
 
 if __name__ == '__main__':
