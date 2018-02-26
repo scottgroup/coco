@@ -2,11 +2,14 @@
 """
 coco.py
 This script is called by the bash executable "coco" from the /bin/ directory.
-It calls one of three other scripts: correct_annotation, CorrectCount or CorrectBedgraph depending on the parameters used by the user.
+It calls one of three other scripts: correct_annotation, correct_count or correct_bedgraph depending on the parameters used.
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.1.0'
+__version__='0.2.0'
+# new in version 0.2.0 : introns correction
+# correct_annotation : creation of a second gtf file (.intron.gtf) only having the feature overlapping embedded genes
+# correct_count : added distribute_embedded_counts
 
 import sys
 import os

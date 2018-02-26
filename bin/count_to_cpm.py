@@ -1,10 +1,7 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
-import os
 import sys
 import subprocess
-from gtf import dataframe
-from distribute_counts import read_count_matrix
 
 
 def get_main_transcript(dtranscript):
@@ -45,15 +42,17 @@ def get_true_length_from_gtf(df_gtf):
     return df_gtf
 
 
-def add_pm_counts(count_file,gtf_file,bam_file, count_type, mean_insert_size=100):
+def add_pm_counts(count_file, df_gtf, bam_file, count_type, mean_insert_size=0):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
-    Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of that script
-    by specifying the --rawOnly option in CorrectCount.
+    Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of
+    that script by specifying the --rawOnly option in CorrectCount.
 
     :param count_file: featureCounts count file.
-    :param gtf_file: annotation file in gtf format.
+    :param df_gtf: dataframe containing the gtf information.
     :param bam_file: bam file, used to calculate max read size.
+    :param count_type: whether using only uniquely mapped reads (uniqueOnly) or multimapped (multiOnly or both)
+    :param mean_insert_size: mean insert size of the reads, can be computed using Picard
     """
     read_bam = ('samtools','view', bam_file)
     head_file = ('head','-n','100000')
@@ -68,28 +67,12 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type, mean_insert_size=100
         max_read_size = int(str(max_read_size, 'utf-8'))
     except:
         print("error: There was a problem while reading the bam file to get the max read size.\n"
-              "command performed: 'samtools view %s | head -n 10| cut -f 10 | wc -L'\n"
+              "command performed: 'samtools view %s | head -n 100000 | cut -f 10 | wc -L'\n"
               "output obtained: %s" %(bam_file,max_read_size))
-        sys.exit(1)
-    try:
-        df_gtf=dataframe(gtf_file)
-        df_gtf = df_gtf[
-            ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
-             'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
-        df_gtf['seqname'] = df_gtf['seqname'].map(str)
-        df_gtf['start'] = df_gtf['start'].map(int)
-        df_gtf['end'] = df_gtf['end'].map(int)
-    except:
-        print('error: gtf file %s could not be read. Please specify a proper annotation file in gene transfert '
-              'format (.gtf) obtained from Ensembl.' %(gtf_file))
         sys.exit(1)
     df_gtf = get_true_length_from_gtf(df_gtf)
     df_gtf = df_gtf[['gene_id', 'gene_name', 'gene_biotype', 'length']]
-    if count_type == 'uniqueOnly':
-        dcount = read_count_matrix(count_file)
-        dcount = dcount.rename(columns={'accumulation': 'count'})
-    else:
-        dcount = pd.read_csv(count_file, sep='\t', header=None, names=['gene_id', 'count'])
+    dcount = pd.read_csv(count_file, sep='\t', header=None, names=['gene_id', 'count'])
     dcount[['count']] = dcount[['count']].astype(float)
     Assigned = dcount['count'].sum()
     dcount['cpm'] = (dcount['count'].map(float) / Assigned) * 1E6
@@ -107,10 +90,3 @@ def add_pm_counts(count_file,gtf_file,bam_file, count_type, mean_insert_size=100
     dcount = dcount[['gene_id', 'gene_name', 'count', 'cpm', 'tpm']]
     dcount.to_csv(path_or_buf=count_file, index=False, sep='\t', header=True)
 
-
-
-#if __name__ == '__main__':
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/Rsubread_CoCo/%s.CorrectCount.Rsubread.count')
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/before_correction/Notcoco/%s.CorrectCount_NOTCOCO.Rsubread.count')
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/before_correction/Initial/%s.CorrectCount.Rsubread.count')
-    #main(file='/home/vincent/Desktop/Sequencing/Methods_Compare/Total/raw_count/old_CoCo/%s.CorrectCount_wo_dup.Rsubread.count')
