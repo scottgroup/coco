@@ -68,6 +68,7 @@ def correct_embedded(df_gtf, gene_file, intron_file, outfile,count_type):
     del df_merged, intron_diff
     df_gene.loc[df_gene.host_diff.notnull(),'accumulation'] = df_gene.accumulation + df_gene.host_diff
     df_gene.loc[df_gene.emb_diff.notnull(),'accumulation'] = df_gene.accumulation + df_gene.emb_diff
+    df_gene = df_gene.sort_values('gene_id')
 
     df_gene[['gene_id','accumulation']].to_csv(outfile, index=False, sep='\t', header=False)
     del df_gene

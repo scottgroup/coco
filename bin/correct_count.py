@@ -59,7 +59,7 @@ def extract_multi(output_dir, output, bamfile):
     x = os.system(fetch_multi)
     if x!=0:
         if x == 256:
-            print('Input file does not have multimapping read, skipping coco multi')
+            print('Input file does not have multimapped reads, skipping coco multi')
             return x
         else:
             sys.exit('fetch_multi exit status %d' % x)
@@ -75,8 +75,6 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, infile,
                unique_counts, output_dir, R_opt, v, chunksize, feature,ftype, df_gtf, df_gtf_intron):
     os.chdir(output_dir)
     output_name = os.path.basename(output)
-    if not unique_counts:
-        sys.exit('multiOnly requires the option -u to be set (count matrix from uniquely mapped reads)')
     tests.check_unique_count(unique_counts)
     command="featureCounts " \
             "--minOverlap %d " \
@@ -110,8 +108,8 @@ def main():
     parser.add_argument("output", help="Name of the output file holding the counts per genes. ")
 
     parser.add_argument("-c", "--countType",
-                        help="Decide whether to consider only uniquely mapped reads (uniqueOnly), only multi-mapped reads (multiOnly) or both (both) to produce read count values for genes. Default: both",
-                        choices=['uniqueOnly', 'multiOnly', 'both'], default='both')
+                        help="Decide whether to consider only uniquely mapped reads (uniqueOnly) or both uniquely and multimapped reads (both) to produce read count values for genes. Default: both",
+                        choices=['uniqueOnly', 'both'], default='both')
     parser.add_argument("-s", "--strand",
                         help="Strandedness: strand-specific read counting. Acceptable values: 0 (unstranded), 1 (stranded) and 2 (reversely stranded). Default: 0",
                         type=int, choices=[0, 1, 2], default=0)
@@ -129,9 +127,6 @@ def main():
     parser.add_argument("-r", "--rawOnly",
                         help="Use this option to output the featureCounts raw read counts only and not their calculated CPM and TPM values.",
                         action="store_true")
-    parser.add_argument("-u", "--unique_counts", help="Path to uniquely mapped reads count matrix with following format: "
-                                                      "gene_id  seqname start   end strand  length  accumulation (separated by a tabulation). "
-                                                      "Required for multiOnly", type=str)
     parser.add_argument("-R", "--reportreads", help="featureCounts output format (SAM/BAM only available for >=v1.5.3)",
                                                       choices=['None','CORE','SAM', 'BAM'], type=str, default='None')
     parser.add_argument("-C", "--chunksize",
@@ -209,19 +204,6 @@ def main():
                                   output_file + '_final',count_type)
 
 
-    elif count_type=='multiOnly':
-        x = extract_multi(output_dir, output, bamfile)
-        if x == 0:
-            coco_multi(minOverlap, strand, thread, paired, gtf_file, output, bamfile,
-                       unique_counts, output_dir, R_opt_multi, v, chunksize,'','gene', df_gtf_full, None)
-            coco_multi(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
-                       output+'.intron', bamfile, unique_counts, output_dir, R_opt_emb, v, chunksize,'-g transcript_id',
-                       'intron',df_gtf_full, df_gtf_intron)
-            os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
-            dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
-                                      output_dir + os.path.basename(output) + '_final', count_type)
-
-
     elif count_type == 'both':
         #For both, default.
         unique_output = output_dir+'/unique_'+os.path.basename(output)
@@ -267,9 +249,6 @@ def main():
         os.remove(os.path.join(output_dir,os.path.basename(output))+'.intron.summary')
         os.remove(os.path.join(output_dir, os.path.basename(output)) + '.summary')
 
-    elif count_type == 'multiOnly':
-        os.remove(os.path.join(output_dir,'multi_'+os.path.basename(output))+'.intron.summary')
-        os.remove(os.path.join(output_dir,'multi_'+ os.path.basename(output)) + '.summary')
     elif  count_type == 'both':
         os.remove(os.path.join(output_dir,'unique_'+os.path.basename(output))+'.intron.summary')
         os.remove(os.path.join(output_dir, 'unique_'+os.path.basename(output)) + '.summary')

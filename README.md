@@ -17,10 +17,10 @@ These instructions will get you a copy of the project up and running on your loc
 
 Here are the tools that must be installed for CoCo to work:
 
-* [Subread](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by CorrectCount to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
-* [BEDtools](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by CorrectAnnotation and for *genomecov* which is used by CorrectBedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
+* [Subread](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by correct_count to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
+* [BEDtools](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by correct_annotation and for *genomecov* which is used by correct_bedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
 * [samtools](http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
-* [pairedBamToBed12](https://github.com/Population-Transcriptomics/pairedBamToBed12), only required for the CorrectBedgraph mode.
+* [pairedBamToBed12](https://github.com/Population-Transcriptomics/pairedBamToBed12), only required for the correct_bedgraph mode.
 
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
@@ -52,15 +52,16 @@ And then you're pretty much done! You should have access to the **coco** command
  ```
 coco --help
 >>	CoCo: Count Corrector for embedded and multi-mapped genes.
-	Version: 0.1.0
+	Version: 0.2.0
 	Usage: CoCo <Run mode> <Run mode specific arguments>
 
 	Run modes:
-		CorrectAnnotation:	Produce modified annotation for embedded genes.
-		CorrectCount:		Produce gene expression values, taking multi-mapped reads into account.
-		CorrectBedgraph:	Produce paired-end bedgraphs.
+		correct_annotation, CA, ca:	Produce modified annotation for embedded genes.
+		correct_count, CC, cb:		Produce gene expression values, taking multi-mapped reads into account.
+		correct_bedgraph, CB, cb:	Produce paired-end bedgraphs.
 
-	-h, --help	show this help message and exit
+	-h, --help      show this help message and exit
+	-v, --version   show CoCo version
 
 	For more info, please refer to the README file.
 ```
@@ -70,7 +71,7 @@ coco --help
 ## **Usage**
 
 Once the repository is downloaded and its /bin/ path is added to your PATH environment variable, CoCo can be called directly from your terminal.
-CoCo is divided into two main run modes: **CorrectAnnotation** and **CorrectCount**, and one accessory mode: **CorrectBedgraph**, each with their own parameters, and can be used as such:
+CoCo is divided into two main run modes: **correct_annotation** and **correct_count**, and one accessory mode: **correct_bedgraph**, each with their own parameters, and can be used as such:
 
 ```
 coco [run mode] [args]
@@ -132,7 +133,7 @@ Scientific results produced using CoCo shall acknowledge its use. Please cite as
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
 * Many thanks to Jean-Michel Garrant for his general wisdom.
-* Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py script that is used by CorrectAnnotation.
+* Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py script that is used by correct_annotation.
 
 
 

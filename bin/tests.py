@@ -83,6 +83,9 @@ def check_gtf(gtf_file,check_gene_biotype=False):
 
 
 def check_output(output):
+    if os.path.isdir(output):
+        print('error: output specified is a directory, please provide a file name to be created')
+        sys.exit(1)
     output_path='/'.join(output.rstrip('/').split('/')[:-1])
     cwd = os.getcwd()
     if os.path.isdir(output_path)==False:
