@@ -138,7 +138,6 @@ def main():
     bamfile = args.bamfile
     output = args.output
     count_type = args.countType
-    unique_counts = args.unique_counts
 
     strand = args.strand
     minOverlap = args.minOverlap

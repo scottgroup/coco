@@ -2,8 +2,13 @@ import os,sys
 import subprocess
 import shutil
 
-def check_dependencies():
-    dependencies=['samtools','bedtools','featureCounts']
+def check_dependencies(run_mode):
+    if run_mode=='correct_annotation':
+        dependencies=['samtools','bedtools']
+    elif run_mode == 'correct_count':
+        dependencies = ['samtools', 'bedtools', 'featureCounts']
+    elif run_mode == 'correct_bedgraph':
+        dependencies = ['samtools', 'bedtools', 'pairedBamToBed12']
     errors=[]
     for dependency in dependencies:
         exist=shutil.which(dependency)

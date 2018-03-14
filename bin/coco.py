@@ -34,13 +34,13 @@ if len(sys.argv) == 1:
     print(help)
     sys.exit(1)
 else:
-    tests.check_dependencies()
     run_mode = sys.argv[1]
     run_mode_dict={'CA':'correct_annotation','ca':'correct_annotation','CC':'correct_count','cc':'correct_count',
                    'CB':'correct_bedgraph','cb':'correct_bedgraph'}
     if run_mode in run_mode_dict:
         run_mode = run_mode_dict[run_mode]
     if run_mode in ['correct_annotation','correct_count','correct_bedgraph']:
+        tests.check_dependencies(run_mode)
         print('Launching',run_mode)
         os.system('python3 '+(os.path.realpath(__file__).replace('coco.py',''))+run_mode+'.py '+(' '.join(sys.argv[2:])))
     elif run_mode == '--help' or run_mode=='-h':
