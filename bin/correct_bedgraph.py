@@ -17,7 +17,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("bamfile", help="path to .bam file")
 parser.add_argument("output", help="name of output bedgraph")
-parser.add_argument("genomepath", help='complete path of the genome file for genomeCoverageBed for bedtools')
+parser.add_argument("genomepath", help='complete path of the genome file for bedtools genomeCoverageBed.'
+                                       'The file must contain two columns separated by a tabulation, the first column '
+                                       'is the name of the chromosome and the second is the length of the chromosome.')
 parser.add_argument("-m","--contains_multi", help='indicates that your file contains multimapped reads or not '
                                                   '(sorting will be longer, but accurate)', action="store_true")
 parser.add_argument("-c", "--chunk_size", help="number of rows to treat at a time. Default: 2500000",
