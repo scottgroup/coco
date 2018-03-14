@@ -169,9 +169,6 @@ def fix_gene_and_transcript_size(df_gtf,dexon):
     return df_gtf
 
 def build_gapped_gtf(df_gtf,output):
-
-    print('Building correct_annotation gtf...')
-
     df_gtf['exon_number']=df_gtf['exon_number'].fillna(value=0,axis=0).map(int).map(str)
     df_gtf.loc[df_gtf['feature'] == 'exon','feature']='zexon'   #Makes proper gtf sorting simpler
     df_gtf.loc[df_gtf['feature'] == 'gene','transcript_id']='A' #Makes proper gtf sorting simpler
@@ -390,6 +387,12 @@ def fetch_closest_exons(df_intersect, df_gtf):
     df_final = df_final[(df_final.exon_start != -1)]
     return df_final
 
+def check_biotypes(df_gtf,biotypes_embedded):
+    biotypes_in_gtf=df_gtf['gene_biotype'].unique()
+    for biotype in biotypes_embedded:
+        if biotype not in biotypes_in_gtf:
+            print('Warning! gene_biotype %s is not present in the gtf.') %(biotype)
+
 
 def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
     """
@@ -424,6 +427,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         df_gtf.loc[df_gtf.feature!='gene', 'transcript_support_level'] = '5'
     if output == 'None':
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
+    check_biotypes(df_gtf,biotypes_embedded)
     outpath=os.path.dirname(output)
     df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
@@ -481,7 +485,10 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
 
 if __name__=='__main__':
     if len(sys.argv)>1:
-        correct_annotation(gtf_file=sys.argv[1])
+        if len(sys.argv)==2:
+            correct_annotation(gtf_file=sys.argv[1], output='None', biotypes_embedded=sys.argv[2])    #argv[2] should be the biotype_embedded_list
+        else:
+            correct_annotation(gtf_file=sys.argv[1], output='None')
     else:
         print('error: Not enough arguments!')
         sys.exit(1)
