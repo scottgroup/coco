@@ -25,7 +25,7 @@ Here are the tools that must be installed for CoCo to work:
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
 CoCo also uses some python3 packages:
-* [**pandas**](http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
+* [pandas](http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
 
 
 
@@ -88,7 +88,7 @@ Here is how a user (you) can use the three CoCo modules to get to the desired ou
 
 <img src="ressources/CoCoPipeline.PNG" alt="CoCo Pipeline" style="width: 700px;"/>
 
-For detailed information about the usage of every run modes, please refer to the [**MANUAL.md**](MANUAL.md).
+For detailed information about the usage of every run modes, please refer to the [MANUAL.md](MANUAL.md).
 
 
 
