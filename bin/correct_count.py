@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 CorrectCount.py
 This script produces the abundance values (read counts, CPM and TPM) for each genes
@@ -63,7 +63,7 @@ def extract_multi(output_dir, output, bamfile):
             return x
         else:
             sys.exit('fetch_multi exit status %d' % x)
-    samtobam = 'samtools view -b %s/multi_%s.sam > %s/multi_%s.bam'%(output_dir,output_name, output_dir,output_name)
+    samtobam = 'samtools view -bS %s/multi_%s.sam > %s/multi_%s.bam'%(output_dir,output_name, output_dir,output_name)
     x = os.system(samtobam)
     if x!=0:
         sys.exit('samtobam exit status %d'%x)
@@ -94,10 +94,9 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, infile,
     x = os.system(command)
     if x !=0:
         sys.exit(x)
-    output_file = output_dir+'/'+output_name
     featurefile = '%s/%s.featureCounts'%(output_dir, os.path.basename(infile))
     distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, df_gtf,
-                                                output_file, v, chunksize, thread, ftype,df_gtf_intron)
+                                                output, v, chunksize, thread, ftype,df_gtf_intron)
 
 
 def main():
@@ -127,7 +126,7 @@ def main():
     parser.add_argument("-r", "--rawOnly",
                         help="Use this option to output the featureCounts raw read counts only and not their calculated CPM and TPM values.",
                         action="store_true")
-    parser.add_argument("-R", "--reportreads", help="featureCounts output format (SAM/BAM only available for >=v1.5.3)",
+    parser.add_argument("-R", "--reportreads", help="featureCounts output format (SAM/BAM only available for >=v1.5.3). Default: None",
                                                       choices=['None','CORE','SAM', 'BAM'], type=str, default='None')
     parser.add_argument("-C", "--chunksize",
                         help="only with -R SAM/BAM, number of rows to read from sam/bam file at a time",
@@ -152,8 +151,9 @@ def main():
     tests.check_bam(bamfile)
     tests.check_output(output)
 
-    v = subprocess.run(['featureCounts','-v'],
-                       stderr=subprocess.PIPE).stderr.decode('utf-8').strip().split(' ')[-1]
+    vfc = subprocess.Popen(['featureCounts','-v'], stderr=subprocess.PIPE)
+    std_out, err = vfc.communicate()
+    v = err.decode('utf-8').strip().split(' ')[-1]
     if v < 'v1.5.3':
         if R_opt == 'None':
             R_opt_unique = ''
@@ -171,14 +171,11 @@ def main():
         R_opt_emb = 'CORE'
     print('Using featureCounts, version %s, -R %s'%(str(v),R_opt))
 
+    output = os.path.abspath(output)
     output_dir = os.path.dirname(output)
-    if output_dir == '' or output_dir == '.':
-        output_dir = os.getcwd()
+    print(output_dir)
 
-    bam_dir = os.path.dirname(bamfile)
-    if bam_dir == '' or bam_dir == '.':
-        bam_dir = os.getcwd()
-        bamfile = os.path.join(bam_dir, bamfile)
+    bamfile = os.path.abspath(bamfile)
 
     if paired != True:
         paired = ''
@@ -229,24 +226,23 @@ def main():
 
             os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
         else:
-            os.rename(unique_output, os.path.join(output_dir,os.path.basename(output)))
-            os.rename(unique_output+'.intron', os.path.join(output_dir, os.path.basename(output)+'.intron'))
+            os.rename(unique_output, output)
+            os.rename(unique_output+'.intron', output+'.intron')
             count_type = 'uniqueOnly'
         dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
-                                  os.path.join(output_dir,os.path.basename(output)+'_final'), count_type)
+                                  output+'_final', count_type)
 
     else:
         sys.exit(1)
 
     # doing some cleaning
-    os.remove(os.path.join(output_dir, os.path.basename(output)) + '.intron')
-    os.remove(os.path.join(output_dir,os.path.basename(output)))
-    os.rename(os.path.join(output_dir,os.path.basename(output)+'_final'),
-              os.path.join(output_dir,os.path.basename(output)))
+    os.remove(output + '.intron')
+    os.remove(output)
+    os.rename(output+'_final', output)
 
     if count_type == 'uniqueOnly':
-        os.remove(os.path.join(output_dir,os.path.basename(output))+'.intron.summary')
-        os.remove(os.path.join(output_dir, os.path.basename(output)) + '.summary')
+        os.remove(output+'.intron.summary')
+        os.remove(output + '.summary')
 
     elif  count_type == 'both':
         os.remove(os.path.join(output_dir,'unique_'+os.path.basename(output))+'.intron.summary')
@@ -268,7 +264,7 @@ def main():
         os.remove(intronfile)
 
     if rawonly!=True:
-        count_to_cpm.add_pm_counts(os.path.join(output_dir,os.path.basename(output)), df_gtf_full, bamfile,
+        count_to_cpm.add_pm_counts(output, df_gtf_full, bamfile,
                                    mean_insert_size=meanInsertSize)
     print('coco cc finished successfully')
 

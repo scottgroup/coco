@@ -6,9 +6,9 @@ import multiprocessing as mp
 import subprocess
 import shutil
 
-def prepare_bed12(bamfile, output_dir, output_name, multi):
+def prepare_bed12(bamfile, output_dir, output_name, thread):
     command = 'bash %s/prepare_bed12.sh %s %s %s %s'%(os.path.dirname(__file__),bamfile,
-                                               output_dir, output_name, multi)
+                                               output_dir, output_name, thread)
     x = os.system(command)
     return x
 
@@ -138,9 +138,11 @@ def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
             # reads the first line of the bedgraph
             line = f.readline()
         if line[0:3] != 'chr':
-            v = subprocess.run(['awk', '--version'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip().split()[2].strip(',')
+            v = subprocess.check_output(['awk', '--version']).decode('utf-8').strip().split()[2].strip(',')
             if v >= '4.1.0':
                 add_chr = "awk -i inplace 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s "%(output)
             else:
                 add_chr = "awk 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s > %s.tmp && mv %s.tmp %s"%(output, output, output, output)                         
             os.system(add_chr)
+        sedM = "sed -i 's/chrM\t/chrMT\t/' %s"%output
+        os.system(sedM)

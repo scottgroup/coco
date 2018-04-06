@@ -1,6 +1,7 @@
 import os,sys
 import subprocess
 import shutil
+from distutils.spawn import find_executable
 
 def check_dependencies(run_mode):
     if run_mode=='correct_annotation':
@@ -8,10 +9,10 @@ def check_dependencies(run_mode):
     elif run_mode == 'correct_count':
         dependencies = ['samtools', 'bedtools', 'featureCounts']
     elif run_mode == 'correct_bedgraph':
-        dependencies = ['samtools', 'bedtools', 'pairedBamToBed12']
+        dependencies = ['samtools', 'bedtools', 'pairedBamToBed12','featureCounts']
     errors=[]
     for dependency in dependencies:
-        exist=shutil.which(dependency)
+        exist=find_executable(dependency)
         if exist==None:
             errors.append(dependency)
     if len(errors) != 0:

@@ -20,8 +20,6 @@ parser.add_argument("output", help="name of output bedgraph")
 parser.add_argument("genomepath", help='complete path of the genome file for bedtools genomeCoverageBed.'
                                        'The file must contain two columns separated by a tabulation, the first column '
                                        'is the name of the chromosome and the second is the length of the chromosome.')
-parser.add_argument("-m","--contains_multi", help='indicates that your file contains multimapped reads or not '
-                                                  '(sorting will be longer, but accurate)', action="store_true")
 parser.add_argument("-c", "--chunk_size", help="number of rows to treat at a time. Default: 2500000",
                     type=int, default=2500000 )
 parser.add_argument("-u", "--ucsc_compatible", help="Add trackline and 'chr' prefix if needed.", action="store_true")
@@ -36,20 +34,17 @@ bamfile = args.bamfile
 chunk_size = args.chunk_size
 ucsc = args.ucsc_compatible
 genomepath = args.genomepath
-multi = args.contains_multi
 thread = args.thread
 
 tests.check_bam(bamfile)
-print('output:', output)
 
+output = os.path.abspath(output)
 output_dir = os.path.dirname(output)
-if output_dir == '' or output_dir == '.':
-    output_dir = os.getcwd()
-print('output_dir:', output_dir)
+print('output: ', output)
 
 
-x = correct_bg.prepare_bed12(bamfile, output_dir,''.join(os.path.basename(output).rsplit('.',1)[:-1]), multi)
-temp_dir = ''.join(os.path.basename(output).rsplit('.',1)[:-1])
+x = correct_bg.prepare_bed12(bamfile, output_dir,os.path.basename(output), thread)
+temp_dir = os.path.basename(output)
 if x !=0 :
     sys.exit('prepare_bed12 exit status: '+ str(x))
 
