@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 coco.py
 This script is called by the bash executable "coco" from the /bin/ directory.
@@ -7,8 +7,7 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
 __version__='0.2.1'
-# new in version 0.2.1 : better sorting in correct_bedgraph, backward compatibilty python3 < 3.5 and python2 >=2.7.12
-#                        samtools >= v0.1.19
+# new in version 0.2.1 : better sorting in correct_bedgraph, backward compatibility with python3.4 (recommended 3.5.1 or higher)
 # new in version 0.2.0 : introns correction
 # correct_annotation : creation of a second gtf file (.intron.gtf) only having the feature overlapping embedded genes
 # correct_count : added distribute_embedded_counts

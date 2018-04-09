@@ -17,15 +17,15 @@ These instructions will get you a copy of the project up and running on your loc
 
 Here are the tools that must be installed for CoCo to work:
 
-* [Subread](http://subread.sourceforge.net/), for the *featureCounts* function, which is used by correct_count to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
-* [BEDtools](http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by correct_annotation and for *genomecov* which is used by correct_bedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
-* [samtools](http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
+* [Subread] (v1.5.2 or higher)(http://subread.sourceforge.net/), for the *featureCounts* function, which is used by correct_count to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
+* [BEDtools] (v.2.25.0 or higher)(http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by correct_annotation and for *genomecov* which is used by correct_bedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
+* [samtools] (v1.3.1 or higher)(http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
 * [pairedBamToBed12](https://github.com/Population-Transcriptomics/pairedBamToBed12), only required for the correct_bedgraph mode.
 
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
 CoCo also uses some python3 packages:
-* [pandas](http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
+* [pandas] (v0.18.0 or higher)(http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
 
 
 
@@ -52,7 +52,7 @@ And then you're pretty much done! You should have access to the **coco** command
  ```
 coco --help
 >>	CoCo: Count Corrector for embedded and multi-mapped genes.
-	Version: 0.2.0
+	Version: 0.2.1
 	Usage: CoCo <Run mode> <Run mode specific arguments>
 
 	Run modes:
@@ -94,11 +94,10 @@ For detailed information about the usage of every run modes, please refer to the
 
 ## **Authors**
 
-* **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction.*
+* **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction and collaborated on the correction for ambiguous reads.*
 * **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.* - [boiv2803](http://gitlabscottgroup.med.usherbrooke.ca/u/boiv2803)
 * **Michelle Scott** - *Mastermind of the project and awesome PI* - [scottgroup](http://scottgroup.med.usherbrooke.ca/)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 
 

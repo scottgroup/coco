@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 CorrectCount.py
 This script produces the abundance values (read counts, CPM and TPM) for each genes
