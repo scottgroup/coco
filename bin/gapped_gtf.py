@@ -391,7 +391,7 @@ def check_biotypes(df_gtf,biotypes_embedded):
     biotypes_in_gtf=df_gtf['gene_biotype'].unique()
     for biotype in biotypes_embedded:
         if biotype not in biotypes_in_gtf:
-            print('Warning! gene_biotype %s is not present in the gtf.') %(biotype)
+            print('Warning! gene_biotype %s is not present in the gtf.' %(biotype))
 
 
 def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
@@ -429,8 +429,9 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
     check_biotypes(df_gtf,biotypes_embedded)
     outpath=os.path.dirname(output)
-    df_gtf.loc[df_gtf['transcript_name'].isnull()==True,'transcript_name']=df_gtf['gene_name']
-    df_gtf.loc[df_gtf['transcript_biotype'].isnull()==True,'transcript_biotype']=df_gtf['gene_biotype']
+    df_gtf.loc[df_gtf['gene_name'].isnull(), 'gene_name'] = df_gtf['gene_id']
+    df_gtf.loc[df_gtf['transcript_name'].isnull(),'transcript_name']=df_gtf['gene_name']
+    df_gtf.loc[df_gtf['transcript_biotype'].isnull(),'transcript_biotype']=df_gtf['gene_biotype']
     df_gtf=df_gtf[df_gtf['feature'].isin(['gene','transcript','exon'])==True]
     df_gtf['exon_id'] = 'NaN'
     df_gtf.loc[df_gtf['feature']=='exon','exon_id'] = df_gtf['transcript_id'] + '.' + df_gtf['exon_number'].map(str).str.split('.').str.get(0)
