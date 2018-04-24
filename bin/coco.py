@@ -6,7 +6,8 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.1'
+__version__='0.2.1p1'
+# New in version 0.2.1p1 : Corrected length of monoexonic genes contained in small non-coding RNA for TPM calculation
 # new in version 0.2.1 : better sorting in correct_bedgraph, backward compatibility with python3.4 (recommended 3.5.1 or higher)
 # new in version 0.2.0 : introns correction
 # correct_annotation : creation of a second gtf file (.intron.gtf) only having the feature overlapping embedded genes

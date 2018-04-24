@@ -173,7 +173,6 @@ def main():
 
     output = os.path.abspath(output)
     output_dir = os.path.dirname(output)
-    print(output_dir)
 
     bamfile = os.path.abspath(bamfile)
 
