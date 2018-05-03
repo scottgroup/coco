@@ -226,7 +226,9 @@ def main():
             os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
         else:
             os.rename(unique_output, output)
+            os.rename(unique_output+'.summary', output+'.summary')
             os.rename(unique_output+'.intron', output+'.intron')
+            os.rename(unique_output+'.intron.summary', output+'.intron.summary')
             count_type = 'uniqueOnly'
         dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
                                   output+'_final', count_type)
