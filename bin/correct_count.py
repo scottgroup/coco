@@ -254,7 +254,7 @@ def main():
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)) + '.intron')
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)))
         os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)))
-        if R_opt == 'SAM' or R_opt == 'BAM':
+        if R_opt != 'None':
             os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output))+'.intron.bam.featureCounts')
 
 
