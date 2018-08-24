@@ -203,14 +203,14 @@ def main():
     elif count_type == 'both':
         #For both, default.
         unique_output = output_dir+'/unique_'+os.path.basename(output)
-        # x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique,'')
-        # if x != 0:
-        #     sys.exit(x)
-        # # embedded correction
-        # x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
-        #                 unique_output+'.intron', bamfile, '', '-g transcript_id')
-        # if x != 0:
-        #     sys.exit(x)
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique,'')
+        if x != 0:
+            sys.exit(x)
+        # embedded correction
+        x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
+                        unique_output+'.intron', bamfile, '', '-g transcript_id')
+        if x != 0:
+            sys.exit(x)
 
         x = extract_multi(output_dir, output, bamfile, thread)
         multibam = '%s/multi_%s.bam' % (output_dir, os.path.basename(output))
