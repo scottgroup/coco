@@ -47,14 +47,14 @@ def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bam
     x = os.system(command)
     return x
 
-def extract_multi(output_dir, output, bamfile):
+def extract_multi(output_dir, output, bamfile, thread):
     output_name = os.path.basename(output)
     print('Extracting multimapped reads')
     fetch_header = 'samtools view -H %s > %s/multi_%s.sam'%(bamfile, output_dir, output_name)
     x = os.system(fetch_header)
     if x!=0:
         sys.exit('fetch_header exit status %d'%x)
-    fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vw 'NH:i:1' >> %s/multi_%s.sam"%(bamfile, output_dir,
+    fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vwE 'NH:i:[10]' >> %s/multi_%s.sam"%(bamfile, output_dir,
                                                                                                 output_name)
     x = os.system(fetch_multi)
     if x!=0:
@@ -63,7 +63,8 @@ def extract_multi(output_dir, output, bamfile):
             return x
         else:
             sys.exit('fetch_multi exit status %d' % x)
-    samtobam = 'samtools view -bS %s/multi_%s.sam > %s/multi_%s.bam'%(output_dir,output_name, output_dir,output_name)
+    samtobam = 'samtools view -bS -@ %d %s/multi_%s.sam > %s/multi_%s.bam'%(thread, output_dir, output_name, output_dir,
+                                                                            output_name)
     x = os.system(samtobam)
     if x!=0:
         sys.exit('samtobam exit status %d'%x)
@@ -202,16 +203,16 @@ def main():
     elif count_type == 'both':
         #For both, default.
         unique_output = output_dir+'/unique_'+os.path.basename(output)
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique,'')
-        if x != 0:
-            sys.exit(x)
-        # embedded correction
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
-                        unique_output+'.intron', bamfile, '', '-g transcript_id')
-        if x != 0:
-            sys.exit(x)
+        # x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique,'')
+        # if x != 0:
+        #     sys.exit(x)
+        # # embedded correction
+        # x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
+        #                 unique_output+'.intron', bamfile, '', '-g transcript_id')
+        # if x != 0:
+        #     sys.exit(x)
 
-        x = extract_multi(output_dir, output, bamfile)
+        x = extract_multi(output_dir, output, bamfile, thread)
         multibam = '%s/multi_%s.bam' % (output_dir, os.path.basename(output))
         if x == 0:
             coco_multi(minOverlap, strand, thread, paired, gtf_file_intron,
