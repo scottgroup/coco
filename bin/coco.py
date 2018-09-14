@@ -6,7 +6,8 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.1p3'
+__version__='0.2.1p4'
+# New in version 0.2.1p4 : Do not perform intron correction on the embedded genes overlapping exons from different genes
 # New in version 0.2.1p3 : Multi-threading with samtools, avoid negative counts, do not consider unmapped reads in multimapped part
 # New in version 0.2.1p2 : Rename all files when input doesn't have multimapped reads and using option -c both
 # New in version 0.2.1p1 : Corrected length of monoexonic genes contained in small non-coding RNA for TPM calculation

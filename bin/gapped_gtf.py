@@ -292,6 +292,12 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_right = df_right.rename(columns={'right_start': 'exon_start', 'right_end': 'exon_end'})
     df_final = pd.concat([df_right, df_left])
     df_final = df_final[(df_final.exon_start!=-1)]
+    df_weird = df_final.groupby(['gene_id_emb'])['gene_id_host'].nunique().reset_index()
+    weird_list = df_weird[df_weird.gene_id_host >1].gene_id_emb.tolist()
+    if len(weird_list)>0:
+        print('Warning! The intron correction will not be done on the following genes because of their particular situation:\n%s'
+          %('\n'.join(weird_list)))
+    df_final = df_final[~df_final.gene_id_emb.isin(weird_list)]
     return df_final
 
 
@@ -408,23 +414,19 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         print('Annotation file:',gtf_file)
         print('error: Wrong annotation format. Only .gtf files are accepted')
         sys.exit(1)
+    df_gtf = dataframe(gtf_file)
     try:
-        df_gtf=dataframe(gtf_file)
         df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
                        'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype',
                        'transcript_support_level']]
-        df_gtf['seqname']=df_gtf['seqname'].map(str)
-        df_gtf['start']=df_gtf['start'].map(int)
-        df_gtf['end']=df_gtf['end'].map(int)
     except KeyError:
-        df_gtf=dataframe(gtf_file)
         df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
                        'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype']]
-        df_gtf['seqname']=df_gtf['seqname'].map(str)
-        df_gtf['start']=df_gtf['start'].map(int)
-        df_gtf['end']=df_gtf['end'].map(int)
         df_gtf['transcript_support_level'] = 'None'
         df_gtf.loc[df_gtf.feature!='gene', 'transcript_support_level'] = '5'
+    df_gtf['seqname'] = df_gtf['seqname'].map(str)
+    df_gtf['start'] = df_gtf['start'].map(int)
+    df_gtf['end'] = df_gtf['end'].map(int)
     if output == 'None':
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
     check_biotypes(df_gtf,biotypes_embedded)
