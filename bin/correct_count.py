@@ -135,6 +135,7 @@ def main():
     args = parser.parse_args()
 
     gtf_file = args.annotation
+    gtf_file = os.path.abspath(gtf_file)
     bamfile = args.bamfile
     output = args.output
     count_type = args.countType

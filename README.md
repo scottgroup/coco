@@ -122,16 +122,17 @@ For more information about the GNU General Public License, see <http://www.gnu.o
 
 ## **How to cite us**
 
-Scientific results produced using CoCo shall acknowledge its use. Please cite as 
+Scientific results produced using CoCo shall acknowledge its use. Please cite as :
 
-       ---
+Deschamps-Francoeur G & Boivin V, Abou Elela S and Scott S. CoCo: RNA-seq Read Assignment Correction for Nested Genes 
+and Multimapped Reads. BioRxiv 477869 [Preprint]. November 29, 2018. Available from : <https://doi.org/10.1101/477869>
 
 
 
 ## **Acknowledgments**
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
-* Many thanks to Jean-Michel Garrant for his general wisdom.
+* Many thanks to Jean-Michel Garant for his general wisdom.
 * Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py script that is used by correct_annotation.
 
 
