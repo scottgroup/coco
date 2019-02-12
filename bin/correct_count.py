@@ -47,14 +47,14 @@ def coco_unique(minOverlap, strand, thread, paired, gtf_file, output_prefix, bam
     x = os.system(command)
     return x
 
-def extract_multi(output_dir, output, bamfile):
+def extract_multi(output_dir, output, bamfile, thread):
     output_name = os.path.basename(output)
     print('Extracting multimapped reads')
     fetch_header = 'samtools view -H %s > %s/multi_%s.sam'%(bamfile, output_dir, output_name)
     x = os.system(fetch_header)
     if x!=0:
         sys.exit('fetch_header exit status %d'%x)
-    fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vw 'NH:i:1' >> %s/multi_%s.sam"%(bamfile, output_dir,
+    fetch_multi = "samtools view %s | grep 'NH:i:' | grep -vwE 'NH:i:[10]' >> %s/multi_%s.sam"%(bamfile, output_dir,
                                                                                                 output_name)
     x = os.system(fetch_multi)
     if x!=0:
@@ -63,7 +63,8 @@ def extract_multi(output_dir, output, bamfile):
             return x
         else:
             sys.exit('fetch_multi exit status %d' % x)
-    samtobam = 'samtools view -bS %s/multi_%s.sam > %s/multi_%s.bam'%(output_dir,output_name, output_dir,output_name)
+    samtobam = 'samtools view -bS -@ %d %s/multi_%s.sam > %s/multi_%s.bam'%(thread, output_dir, output_name, output_dir,
+                                                                            output_name)
     x = os.system(samtobam)
     if x!=0:
         sys.exit('samtobam exit status %d'%x)
@@ -134,6 +135,7 @@ def main():
     args = parser.parse_args()
 
     gtf_file = args.annotation
+    gtf_file = os.path.abspath(gtf_file)
     bamfile = args.bamfile
     output = args.output
     count_type = args.countType
@@ -211,7 +213,7 @@ def main():
         if x != 0:
             sys.exit(x)
 
-        x = extract_multi(output_dir, output, bamfile)
+        x = extract_multi(output_dir, output, bamfile, thread)
         multibam = '%s/multi_%s.bam' % (output_dir, os.path.basename(output))
         if x == 0:
             coco_multi(minOverlap, strand, thread, paired, gtf_file_intron,
@@ -226,7 +228,9 @@ def main():
             os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
         else:
             os.rename(unique_output, output)
+            os.rename(unique_output+'.summary', output+'.summary')
             os.rename(unique_output+'.intron', output+'.intron')
+            os.rename(unique_output+'.intron.summary', output+'.intron.summary')
             count_type = 'uniqueOnly'
         dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
                                   output+'_final', count_type)
@@ -252,7 +256,7 @@ def main():
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)) + '.intron')
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)))
         os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)))
-        if R_opt == 'SAM' or R_opt == 'BAM':
+        if R_opt != 'None':
             os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output))+'.intron.bam.featureCounts')
 
 

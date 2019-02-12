@@ -6,7 +6,10 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.1p1'
+__version__='0.2.1p4'
+# New in version 0.2.1p4 : Do not perform intron correction on the embedded genes overlapping exons from different genes
+# New in version 0.2.1p3 : Multi-threading with samtools, avoid negative counts, do not consider unmapped reads in multimapped part
+# New in version 0.2.1p2 : Rename all files when input doesn't have multimapped reads and using option -c both
 # New in version 0.2.1p1 : Corrected length of monoexonic genes contained in small non-coding RNA for TPM calculation
 # new in version 0.2.1 : better sorting in correct_bedgraph, backward compatibility with python3.4 (recommended 3.5.1 or higher)
 # new in version 0.2.0 : introns correction

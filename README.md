@@ -122,26 +122,28 @@ For more information about the GNU General Public License, see <http://www.gnu.o
 
 ## **How to cite us**
 
-Scientific results produced using CoCo shall acknowledge its use. Please cite as 
+Please cite as :
 
-       ---
+Deschamps-Francoeur G & Boivin V, Abou Elela S and Scott MS. CoCo: RNA-seq Read Assignment Correction for Nested Genes 
+and Multimapped Reads. BioRxiv 477869 [Preprint]. November 29, 2018. Available from : <https://doi.org/10.1101/477869>
 
 
 
 ## **Acknowledgments**
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
-* Many thanks to Jean-Michel Garrant for his general wisdom.
+* Many thanks to Jean-Michel Garant for his general wisdom.
 * Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py script that is used by correct_annotation.
 
 
 
 ## **References**
-**CoCo**:
+**CoCo**: Deschamps-Francoeur G & Boivin V, Abou Elela S and Scott MS. CoCo: RNA-seq Read Assignment Correction for Nested Genes 
+and Multimapped Reads. BioRxiv 477869 [Preprint]. November 29, 2018. Available from : <https://doi.org/10.1101/477869>
 
-**featureCounts** Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-30.
+**featureCounts**: Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-30.
 
 **bedTools**: Quinlan AR, Hall IM. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinformatics. 2010;26(6):841-2.
 
-**samtools** Li H, Handsaker B, Wysoker A, et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009;25(16):2078-9.
+**samtools**: Li H, Handsaker B, Wysoker A, et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009;25(16):2078-9.
 

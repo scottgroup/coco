@@ -6,7 +6,7 @@ output_name=$3
 threads=$4
 
 # Keep only properly paired reads
-samtools view -bf 0x2 ${bamfile} > ${outpath}/${output_name}_properpair.bam &&
+samtools view -bf 0x2 -@ ${threads} ${bamfile} > ${outpath}/${output_name}_properpair.bam &&
 
 # Sort file by name and HI tag to keep the right mates together
 echo 'sorting'
