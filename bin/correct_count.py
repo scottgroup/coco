@@ -16,17 +16,25 @@ import count_to_cpm
 import distribute_multireads
 import subprocess
 import distribute_embedded_counts as dist_emb
-import gtf
-
+import pandas as pd
+import gc
 
 def read_gtf(gtf_file):
-    df_gtf = gtf.dataframe(gtf_file)
-    df_gtf = df_gtf[
-        ['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id', 'exon_number',
-         'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype', 'transcript_support_level']]
-    df_gtf['seqname'] = df_gtf['seqname'].map(str)
-    df_gtf['start'] = df_gtf['start'].map(int)
-    df_gtf['end'] = df_gtf['end'].map(int)
+    df_gtf = pd.read_csv(gtf_file, sep='\t',
+                         names=['seqname', 'source', 'feature', 'start', 'end', 'score',
+                                'strand', 'frame', 'attributes'],
+                         dtype={'seqname': str, 'start': int, 'end': int},
+                         usecols=['seqname', 'source', 'feature', 'start', 'end', 'attributes'])
+    df_gtf['gene_id'] = df_gtf['attributes'].str.extract('gene_id\s"([^;]+);?"', expand=True)
+    df_gtf['transcript_id'] = df_gtf['attributes'].str.extract('transcript_id\s"([^;]+);?"', expand=True)
+    df_gtf['gene_name'] = df_gtf['attributes'].str.extract('gene_name\s"([^;]+);?"', expand=True)
+    df_gtf['transcript_name'] = df_gtf['attributes'].str.extract('transcript_name\s"([^;]+);?"', expand=True)
+    df_gtf['gene_biotype'] = df_gtf['attributes'].str.extract('gene_biotype\s"([^;]+);?"', expand=True)
+    df_gtf['transcript_biotype'] = df_gtf['attributes'].str.extract('transcript_biotype\s"([^;]+);?"', expand=True)
+    df_gtf['transcript_support_level'] = df_gtf['attributes'].str.extract('transcript_support_level\s"([^;]+);?"',
+                                                                          expand=True)
+    df_gtf['transcript_support_level'] = pd.to_numeric(df_gtf['transcript_support_level'], errors='coerce')
+    df_gtf = df_gtf.drop(['attributes'], axis=1)
     return df_gtf
 
 
@@ -171,7 +179,7 @@ def main():
             R_opt_unique = '-R %s'%R_opt
             R_opt_multi = R_opt
         R_opt_emb = 'CORE'
-    print('Using featureCounts, version %s, -R %s'%(str(v),R_opt))
+    print('Using featureCounts, version %s'%(str(v)))
 
     output = os.path.abspath(output)
     output_dir = os.path.dirname(output)
@@ -219,11 +227,13 @@ def main():
             coco_multi(minOverlap, strand, thread, paired, gtf_file_intron,
                        output + '.intron', multibam, unique_output, output_dir, R_opt_emb, v, chunksize,
                        '-g transcript_id', 'intron', df_gtf_full, df_gtf_intron)
+            gc.collect()
             intronfile = '%s/multi_%s.bam.featureCounts' % (output_dir, os.path.basename(output))
             newintronfile = '%s/multi_%s.intron.bam.featureCounts' % (output_dir, os.path.basename(output))
             os.rename(intronfile, newintronfile)
             coco_multi(minOverlap, strand, thread, paired, gtf_file, output, multibam,
                        unique_output, output_dir, R_opt_multi, v, chunksize,'','gene', df_gtf_full, None)
+            gc.collect()
 
             os.remove('%s/multi_%s.bam' % (output_dir, os.path.basename(output)))
         else:

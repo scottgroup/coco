@@ -32,7 +32,7 @@ def file_len(filename):
     return i + 1
 
 
-def dataframe(filename):
+def dataframe(filename, verbose):
     """Open an optionally gzipped GTF file and return a pandas.DataFrame.
     """
     # Each column is a list stored as a value in this dict.
@@ -40,9 +40,10 @@ def dataframe(filename):
 
     number_of_lines = file_len(filename)
     for i, line in enumerate(lines(filename)):
-        progress = i*100/number_of_lines
-        sys.stdout.write("\r reading lines: %d %%" % progress)
-        sys.stdout.flush()
+        if verbose is True:
+            progress = i*100/number_of_lines
+            sys.stdout.write("\r reading lines: %d %%" % progress)
+            sys.stdout.flush()
         for key in line.keys():
             # This key has not been seen yet, so set it to None for all
             # previous lines.

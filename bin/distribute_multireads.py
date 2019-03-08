@@ -2,6 +2,7 @@ import pandas as pd
 import sys
 import math
 import os
+import gc
 
 
 def distribute_counts(df, df_unique):
@@ -14,23 +15,27 @@ def distribute_counts(df, df_unique):
     '''
 
     df_merged = pd.merge(df, df_unique, on='gene_id')
-    df_merged['dist_counts'] = -1
     df_merged['group_tot'] = df_merged.groupby('QNAME')['accumulation'].transform('sum')
     df_merged['group_len'] = df_merged.groupby('QNAME')['accumulation'].transform('size')
     df_merged.loc[df_merged.group_tot == 0, 'dist_counts'] = 1.0 / df_merged.group_len
     df_merged.loc[df_merged.group_tot != 0, 'dist_counts'] = df_merged.accumulation / df_merged.group_tot
+    df_merged = df_merged.drop(['group_tot','group_len'],axis=1)
     return df_merged
 
 
-def read_count_matrix(count_file):
+def read_count_matrix(count_file, ftype):
     '''
     Reads the uniquely mapped reads matrix obtained by featureCounts
     :param count_file: path to the featureCounts matrix
     :return: df having the uniquely mapped counts
     '''
+    if ftype=='intron':
+        use_columns = ['gene_id', 'length', 'accumulation']
+    else:
+        use_columns = ['gene_id', 'accumulation']
     df= pd.read_csv(count_file, sep='\t', comment='#',
-                    names=['gene_id', 'seqname', 'start', 'end', 'strand', 'length', 'accumulation'])
-    df = df.drop(['seqname', 'start', 'end', 'strand'], axis=1)
+                    names=['gene_id', 'seqname', 'start', 'end', 'strand', 'length', 'accumulation'],
+                    usecols = use_columns)
     df['accumulation'] = pd.to_numeric(df['accumulation'],
                                        errors='coerce')  # if header in file, column name will be changed to NaN,
     df = df.dropna(axis=0)  # and row will be removed
@@ -42,18 +47,16 @@ def read_corefile(corefile, v_subread):
         colnames = ['QNAME', 'status', 'nb_targets', 'gene_id']
     else:
         colnames = ['QNAME', 'status', 'gene_id', 'nb_targets']
-    df = pd.read_csv(corefile, names=colnames,dtype={'nb_targets':str,'status':str, 'gene_id':str}, sep='\t')
+    df = pd.read_csv(corefile, names=colnames,dtype={'status':str, 'gene_id':str}, sep='\t',
+                     usecols=['QNAME', 'status', 'gene_id'])
     df = df[df['status']=='Assigned']
-    df = df.drop(['status','nb_targets'], axis=1)
+    df = df.drop(['status'], axis=1)
     return df
 
 
-def unique_counts(df_gtf, unique_file):
-    df_gtf = df_gtf[df_gtf.feature == 'gene']
-    df_gtf = df_gtf.drop(['seqname', 'source', 'feature', 'start', 'end', 'strand', 'transcript_id', 'exon_number',
-                          'transcript_name', 'transcript_biotype', 'transcript_support_level','gene_biotype',
-                          'gene_name'], axis=1)
-    df_unique = read_count_matrix(unique_file)
+def unique_counts(df_gtf, unique_file, ftype):
+    df_gtf = df_gtf[df_gtf.feature == 'gene'][['gene_id']]
+    df_unique = read_count_matrix(unique_file, ftype)
     df_unique = df_unique.merge(df_gtf, on='gene_id', how='outer')
     df_unique = df_unique.fillna(0.0)
     df_unique = df_unique.set_index('gene_id')
@@ -141,7 +144,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
 
 def distribute_multireads(featurefile, uniquefile, R_opt, df_gtf, output_file, v_subread, chunksize, nb_threads, ftype,
                           gtf_intron):
-    df_unique = unique_counts(df_gtf, uniquefile)
+    df_unique = unique_counts(df_gtf, uniquefile, ftype)
     output_col = ['gene_id','tot']
     if R_opt=='SAM' or R_opt =='BAM':
         df_dist = distribute_samfile(featurefile, chunksize, df_unique, nb_threads, R_opt)
@@ -153,6 +156,8 @@ def distribute_multireads(featurefile, uniquefile, R_opt, df_gtf, output_file, v
             gtf_intron = gtf_intron[gtf_intron.feature=='transcript']
             df_multi = df_multi.merge(gtf_intron[['gene_id','transcript_id']], on='transcript_id')
         df_dist = distribute_counts(df_multi, df_unique)
+        del df_multi
+        gc.collect()
     df_dist = df_dist.fillna(0)
     if ftype=='intron':
         del df_unique

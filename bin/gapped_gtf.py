@@ -400,7 +400,7 @@ def check_biotypes(df_gtf,biotypes_embedded):
             print('Warning! gene_biotype %s is not present in the gtf.' %(biotype))
 
 
-def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
+def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
     """
     correct_annotation builds a new gtf from the one provided, with holes on exons from genes that overlap the specified embedded biotypes.
     Read the MANUAL.md for extensive description.
@@ -414,7 +414,7 @@ def correct_annotation(gtf_file, output, biotypes_embedded=('snoRNA', 'scaRNA', 
         print('Annotation file:',gtf_file)
         print('error: Wrong annotation format. Only .gtf files are accepted')
         sys.exit(1)
-    df_gtf = dataframe(gtf_file)
+    df_gtf = dataframe(gtf_file, verbose)
     try:
         df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
                        'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype',
