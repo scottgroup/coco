@@ -162,7 +162,7 @@ def distribute_multireads(featurefile, uniquefile, R_opt, df_gtf, output_file, v
     if ftype=='intron':
         del df_unique
         df_group = df_dist.groupby('transcript_id').dist_counts.sum().reset_index()
-        df_unique_intron = read_count_matrix(uniquefile+'.intron',)
+        df_unique_intron = read_count_matrix(uniquefile+'.intron', ftype)
         df_unique_intron = df_unique_intron.rename(columns={'gene_id':'transcript_id'})
         df_tot = pd.merge(df_group, df_unique_intron, on='transcript_id', how='outer')
     else :
