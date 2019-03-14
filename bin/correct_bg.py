@@ -70,7 +70,10 @@ def correct_bed12(df, nb_threads):
     pool = mp.Pool(processes=nb_threads)
     results = pool.map(apply_func, [[df_pool, calc_reads] for df_pool in np.array_split(df, nb_threads)])
     pool.close()
-    df = pd.concat(list(results))
+    if pd.__version__ >= '0.23.0':
+        df = pd.concat(list(results), sort=True)
+    else:
+        df = pd.concat(list(results))
     del results
 
     # Keep reads with no overlaps unchanged and remove from main df
@@ -91,7 +94,10 @@ def correct_bed12(df, nb_threads):
     pool = mp.Pool(processes=nb_threads)
     results = pool.map(apply_func, [[df_pool, select_longest] for df_pool in np.array_split(df_same_start, nb_threads)])
     pool.close()
-    df_same_start = pd.concat(list(results))
+    if pd.__version__ >= '0.23.0':
+        df_same_start = pd.concat(list(results), sort=True)
+    else:
+        df_same_start = pd.concat(list(results))
     del results
     df_same_start['block_start'] = df.r1_start
     df_same_start = df_same_start.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
@@ -101,10 +107,16 @@ def correct_bed12(df, nb_threads):
     pool = mp.Pool(processes=nb_threads)
     results = pool.map(apply_func, [[df_pool, select_blocks] for df_pool in np.array_split(df, nb_threads)])
     pool.close()
-    df = pd.concat(list(results))
+    if pd.__version__ >= '0.23.0':
+        df = pd.concat(list(results), sort=True)
+    else:
+        df = pd.concat(list(results))
     del results
     df = df.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
-    df_bed12 = pd.concat([df_wo_overlap, df_identical, df_same_start, df])
+    if pd.__version__ >= '0.23.0':
+        df_bed12 = pd.concat([df_wo_overlap, df_identical, df_same_start, df], sort=True)
+    else:
+        df_bed12 = pd.concat([df_wo_overlap, df_identical, df_same_start, df])
     del df_wo_overlap, df_identical, df_same_start, df
     df_bed12['nb_block'] = df_bed12.block_len.str.count(',')+1
     df_bed12['nb_start'] = df_bed12.block_start.str.count(',')+1

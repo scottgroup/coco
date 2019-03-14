@@ -138,7 +138,7 @@ def main():
     parser.add_argument("-R", "--reportreads", help="featureCounts output format (SAM/BAM only available for >=v1.5.3). Default: None",
                                                       choices=['None','CORE','SAM', 'BAM'], type=str, default='None')
     parser.add_argument("-C", "--chunksize",
-                        help="only with -R SAM/BAM, number of rows to read from sam/bam file at a time",
+                        help="only with -R SAM/BAM, number of rows to read from sam/bam file at a time. Default: 1000000",
                         type=int, default=1000000)
     args = parser.parse_args()
 

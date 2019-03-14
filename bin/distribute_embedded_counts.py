@@ -25,7 +25,10 @@ def correct_embedded(df_gtf, gene_file, intron_file, outfile,count_type):
     df_contained = df_counts[(df_counts.transcript_id.str.contains('.contained_exon'))].copy(deep=True)
     df_embedded = df_embedded.drop(['accumulation'],axis=1)
     df_embedded = df_embedded.merge(df_gene[['gene_id','accumulation']], on='gene_id')
-    df_embedded = pd.concat([df_embedded, df_contained])
+    if pd.__version__ >= '0.23.0':
+        df_embedded = pd.concat([df_embedded, df_contained], sort=True)
+    else:
+        df_embedded = pd.concat([df_embedded, df_contained])
     df_embedded['reads_per_nt'] = df_embedded.accumulation/df_embedded.length
     del df_counts
     df_intron['embedded_id'] = df_intron.transcript_id.str.split('.').str.get(0)

@@ -102,7 +102,10 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
         # samfile must be sorted by name, keep the last name for the next chunk, if the read has multiple alignments
         # that are in different chunks. Ensures all reads are only counted once.
         last_name = df_chunk.tail(1).QNAME.values[0]
-        df_chunk = pd.concat([df_chunk, df_last])
+        if pd.__version__ >= '0.23.0':
+            df_chunk = pd.concat([df_chunk, df_last], sort=True)
+        else:
+            df_chunk = pd.concat([df_chunk, df_last])
         if n != total_chunk:
             df_last = df_chunk[df_chunk.QNAME == last_name].copy(deep=True)
             df_chunk = df_chunk[df_chunk.QNAME != last_name]
@@ -119,7 +122,10 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
         df_merged = distribute_counts(df_chunk[['QNAME','FLAG','TAG2','gene_id']], df_unique)
         df_chunk = df_chunk.drop(['gene_id'], axis=1)
         df_merged = df_merged[['QNAME','FLAG','TAG2','gene_id', 'dist_counts']]
-        df_count = pd.concat([df_count, df_merged[['gene_id','dist_counts']]])
+        if pd.__version__ >= '0.23.0':
+            df_count = pd.concat([df_count, df_merged[['gene_id','dist_counts']]], sort=True)
+        else:
+            df_count = pd.concat([df_count, df_merged[['gene_id', 'dist_counts']]])
         df_merged['dist_counts'] = 'XC:f:'+df_merged['dist_counts'].round(decimals=3).map(str)
         df_sam = pd.merge(df_chunk, df_merged[['QNAME','FLAG','TAG2','dist_counts']], on=['QNAME','FLAG','TAG2'],
                           how='outer')
