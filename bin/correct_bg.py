@@ -156,5 +156,5 @@ def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
             else:
                 add_chr = "awk 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s > %s.tmp && mv %s.tmp %s"%(output, output, output, output)                         
             os.system(add_chr)
-        sedM = "sed -i 's/chrM\t/chrMT\t/' %s"%output
+        sedM = "sed -i 's/chrMT\t/chrM\t/' %s"%output
         os.system(sedM)
