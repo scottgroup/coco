@@ -125,7 +125,7 @@ For more information about the GNU General Public License, see <http://www.gnu.o
 Please cite as :
 
 Deschamps-Francoeur G & Boivin V, Abou Elela S and Scott MS. CoCo: RNA-seq Read Assignment Correction for Nested Genes 
-and Multimapped Reads. BioRxiv 477869 [Preprint]. November 29, 2018. Available from : <https://doi.org/10.1101/477869>
+and Multimapped Reads. Bioinformatics. 2019. Available from : <https://doi.org/10.1093/bioinformatics/btz433>
 
 
 
@@ -139,7 +139,7 @@ and Multimapped Reads. BioRxiv 477869 [Preprint]. November 29, 2018. Available f
 
 ## **References**
 **CoCo**: Deschamps-Francoeur G & Boivin V, Abou Elela S and Scott MS. CoCo: RNA-seq Read Assignment Correction for Nested Genes 
-and Multimapped Reads. BioRxiv 477869 [Preprint]. November 29, 2018. Available from : <https://doi.org/10.1101/477869>
+and Multimapped Reads. Bioinformatics. 2019. Available from : <https://doi.org/10.1093/bioinformatics/btz433>
 
 **featureCounts**: Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-30.
 
