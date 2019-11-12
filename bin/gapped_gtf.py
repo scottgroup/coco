@@ -96,7 +96,7 @@ def drill_an_exon(dIntersect,dexon_fix):
     dIntersect_second_slice['start']=dIntersect_second_slice['end_2']
     dIntersect_second_slice=dIntersect_second_slice[dIntersect_second_slice['start'] < dIntersect_second_slice['end']]
     if pd.__version__ >= '0.23.0':
-        dexon_slice=pd.concat([dIntersect_first_slice,dIntersect_second_slice], sort=True)
+        dexon_slice=pd.concat([dIntersect_first_slice,dIntersect_second_slice], sort=False)
     else:
         dexon_slice = pd.concat([dIntersect_first_slice, dIntersect_second_slice])
     dexon_slice=dexon_slice.sort_values(by=['exon_id'])
@@ -121,7 +121,7 @@ def drill_an_exon(dIntersect,dexon_fix):
         gap_list_gap_starts=[row['start']]+[ value[1]+1 for value in gap_list ]
         dexon_temp=pd.DataFrame(data={'seqname':row['seqname'],'exon_id':row['exon_id'],'start':gap_list_gap_starts,'end':gap_list_gap_ends,'strand':row['strand'],'source':row['source'],'feature':row['feature'],'gene_id':row['gene_id'],'transcript_id':row['transcript_id'],'exon_number':row['exon_number'],'gene_name':row['gene_name'],'gene_biotype':row['gene_biotype'],'transcript_name':row['transcript_name'],'transcript_biotype':row['transcript_biotype'],'transcript_support_level':row['transcript_support_level'],'score':row['score']})
         if pd.__version__ >= '0.23.0':
-            dexon_more_than_one_fixed_exons=pd.concat([dexon_more_than_one_fixed_exons,dexon_temp], sort=True)
+            dexon_more_than_one_fixed_exons=pd.concat([dexon_more_than_one_fixed_exons,dexon_temp], sort=False)
         else:
             dexon_more_than_one_fixed_exons = pd.concat([dexon_more_than_one_fixed_exons, dexon_temp])
         dexon_more_than_one_fixed_exons=dexon_more_than_one_fixed_exons[dexon_more_than_one_fixed_exons['end']-dexon_more_than_one_fixed_exons['start']>1]
@@ -130,14 +130,30 @@ def drill_an_exon(dIntersect,dexon_fix):
     dexon_fix=dexon_fix[['gene_id', 'transcript_id', 'exon_number', 'feature', 'gene_name', 'gene_biotype', 'source', 'transcript_name', 'transcript_biotype', 'transcript_support_level', 'exon_id', 'score']]
     dexon_slice=pd.merge(dexon_slice,dexon_fix,how='left',on='exon_id')
     if pd.__version__ >= '0.23.0':
-        dexon_slice = pd.concat([dexon_slice, dexon_more_than_one_fixed_exons], sort=True)
+        dexon_slice = pd.concat([dexon_slice, dexon_more_than_one_fixed_exons], sort=False)
     else:
         dexon_slice = pd.concat([dexon_slice, dexon_more_than_one_fixed_exons])
     return dexon_slice
 
 
 def fix_exon_number(dexon):
-    dexon=dexon.sort_values(by=['transcript_id','exon_id','start']).reset_index()
+    if 'exon_number' in dexon.columns:
+        dexon[['exon_number']] = dexon[['exon_number']].astype(int)
+        exon_col = 'exon_number'
+    else:
+        exon_col = 'exon_id'
+        dexon = dexon.sort_values(by=['transcript_id', 'exon_id']).reset_index()
+    dexon_minus = dexon[dexon.strand =='-'].copy(deep=True)
+    dexon_plus = dexon[dexon.strand == '+'].copy(deep=True)
+    dexon_minus = dexon_minus.sort_values(by=['transcript_id', exon_col, 'start'], ascending=[True, True, False])
+    dexon_plus = dexon_plus.sort_values(by=['transcript_id', exon_col, 'start'], ascending=[True, True, True])
+    if pd.__version__ >= '0.23.0':
+        dexon = pd.concat([dexon_minus, dexon_plus], sort=False)
+    else:
+        dexon = pd.concat([dexon_minus, dexon_plus])
+    if 'exon_number' in dexon.columns:
+        dexon[['exon_number']] = dexon[['exon_number']].astype(str)
+    del dexon_minus, dexon_plus
     dupplicate_serie=dexon.groupby(dexon['transcript_id'],as_index=False).size()
     dupplicate_quants=list(dupplicate_serie.values)
     unique_keys=list(dupplicate_serie.keys())
@@ -149,7 +165,7 @@ def fix_exon_number(dexon):
     dexon_temp=dexon_temp.drop_duplicates(subset='transcript_id')
     dexon=pd.merge(dexon,dexon_temp[['transcript_id','old_index']],how='left',on='transcript_id')
     dexon['exon_number']=dexon.index-dexon['old_index']+1
-    del dexon['index'],dexon['old_index'],dexon['count']
+    del dexon['old_index'],dexon['count']
     dexon['exon_id']=dexon['transcript_id']+'.'+dexon['exon_number'].map(str)
     return dexon
 
@@ -208,7 +224,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_closest_plus = get_closest_feature(df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand=='+')])
     df_closest_minus =  get_closest_feature(df_gtf[(df_gtf.feature=='exon') & (df_gtf.strand=='-')])
     if pd.__version__ >= '0.23.0':
-        df_closest = pd.concat([df_closest_plus,df_closest_minus], ignore_index=True, sort=True)
+        df_closest = pd.concat([df_closest_plus,df_closest_minus], ignore_index=True, sort=False)
     else:
         df_closest = pd.concat([df_closest_plus, df_closest_minus], ignore_index=True)
     df_closest = df_closest[df_closest.gene_id.isin(list_emb)]
@@ -242,7 +258,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_paired = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)['start_emb', 'end_emb'].last()
     df_paired = df_paired.merge(df_gtf[df_gtf.feature == 'exon'], left_on='gene_id_host', right_on='gene_id')
     if pd.__version__ >= '0.23.0':
-        df_paired = pd.concat([df_paired, df_temp, df_contained], sort=True)
+        df_paired = pd.concat([df_paired, df_temp, df_contained], sort=False)
     else:
         df_paired = pd.concat([df_paired, df_temp, df_contained])
     del df_temp, df_contained
@@ -290,7 +306,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
         df_fakehost['right_start'] = df_grouped.start_emb - df_grouped.min5p.astype(int) + 1
         df_fakehost['intron_type'] = '.fakehost'
         if pd.__version__ >= '0.23.0':
-            df_grouped = pd.concat([df_grouped,df_fakehost],ignore_index=True, sort=True)
+            df_grouped = pd.concat([df_grouped,df_fakehost],ignore_index=True, sort=False)
         else:
             df_grouped = pd.concat([df_grouped, df_fakehost], ignore_index=True)
     df_grouped.drop(['over5p', 'over3p', 'min5p', 'min3p', 'start_emb', 'end_emb'], axis=1, inplace=True)
@@ -309,7 +325,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_right['exon_type'] = '.right'
     df_right = df_right.rename(columns={'right_start': 'exon_start', 'right_end': 'exon_end'})
     if pd.__version__ >= '0.23.0':
-        df_final = pd.concat([df_right, df_left], sort=True)
+        df_final = pd.concat([df_right, df_left], sort=False)
     else:
         df_final = pd.concat([df_right, df_left])
     df_final = df_final[(df_final.exon_start!=-1)]
@@ -349,7 +365,7 @@ def create_gtf(df_intron, df_gtf, output):
     emb_trx.drop_duplicates(subset='gene_id', keep='first', inplace=True) #keep longest transcript only
     emb_exon = emb_gtf[(emb_gtf.feature=='exon') & (emb_gtf.transcript_id.isin(emb_trx.transcript_id.unique()))]
     if pd.__version__ >= '0.23.0':
-        df_new_gtf = pd.concat([df_new_gtf, emb_gene, emb_trx, emb_exon], sort=True)
+        df_new_gtf = pd.concat([df_new_gtf, emb_gene, emb_trx, emb_exon], sort=False)
     else:
         df_new_gtf = pd.concat([df_new_gtf, emb_gene, emb_trx, emb_exon])
     del emb_trx, emb_exon, emb_gene, emb_gtf
@@ -376,7 +392,7 @@ def create_gtf(df_intron, df_gtf, output):
     df_exon['feature'] = 'exon'
     df_exon = fix_exon_number(df_exon)
     if pd.__version__ >= '0.23.0':
-        df_new_gtf = pd.concat([df_new_gtf,df_trx,df_exon], sort=True)
+        df_new_gtf = pd.concat([df_new_gtf,df_trx,df_exon], sort=False)
     else:
         df_new_gtf = pd.concat([df_new_gtf, df_trx, df_exon])
     df_new_gtf.drop_duplicates(inplace=True)
@@ -416,7 +432,7 @@ def fetch_closest_exons(df_intersect, df_gtf):
     df_right['exon_type'] = '.right'
     df_right = df_right.rename(columns={'right_start': 'exon_start', 'right_end': 'exon_end'})
     if pd.__version__ >= '0.23.0':
-        df_final = pd.concat([df_right, df_left], sort=True)
+        df_final = pd.concat([df_right, df_left], sort=False)
     else:
         df_final = pd.concat([df_right, df_left])
     df_final = df_final[(df_final.exon_start != -1)]
@@ -493,9 +509,9 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     del dIntersect_gene['overlap']
     if pd.__version__ >= '0.23.0' :
         df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]],
-                             sort=True)
+                             sort=False)
         df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]],
-                            sort=True)
+                            sort=False)
     else:
         df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]])
         df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]])
@@ -503,12 +519,12 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     df_intron_plus = fetch_closest_exons(dIntersect_gene, df_plus)
     if dIntersect.empty is False:
         if pd.__version__ >= '0.23.0':
-            df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True, sort=True)
+            df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True, sort=False)
         else:
             df_intron = pd.concat([df_intron_minus, df_intron_plus, df_overlapping_intron], ignore_index=True)
     else:
         if pd.__version__ >= '0.23.0':
-            df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True, sort=True)
+            df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True, sort=False)
         else:
             df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True)
     create_gtf(df_intron,df_gtf, output.replace('.gtf','.introns.gtf'))
@@ -516,8 +532,8 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
         dexon_slice=drill_an_exon(dIntersect,dexon_host)
         dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
         if pd.__version__ >= '0.23.0':
-            dexon_host=pd.concat([dexon_host,dexon_slice], sort=True)
-            dexon=pd.concat([dexon_host,dexon_not_host], sort=True)
+            dexon_host=pd.concat([dexon_host,dexon_slice], sort=False)
+            dexon=pd.concat([dexon_host,dexon_not_host], sort=False)
         else:
             dexon_host = pd.concat([dexon_host, dexon_slice])
             dexon = pd.concat([dexon_host, dexon_not_host])
@@ -525,7 +541,7 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
 
         df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
         if pd.__version__ >= '0.23.0':
-            df_gtf=pd.concat([df_gtf,dexon], sort=True)
+            df_gtf=pd.concat([df_gtf,dexon], sort=False)
         else:
             df_gtf = pd.concat([df_gtf, dexon])
     df_gtf = df_gtf.reset_index()

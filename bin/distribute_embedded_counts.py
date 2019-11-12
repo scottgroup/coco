@@ -26,7 +26,7 @@ def correct_embedded(df_gtf, gene_file, intron_file, outfile,count_type):
     df_embedded = df_embedded.drop(['accumulation'],axis=1)
     df_embedded = df_embedded.merge(df_gene[['gene_id','accumulation']], on='gene_id')
     if pd.__version__ >= '0.23.0':
-        df_embedded = pd.concat([df_embedded, df_contained], sort=True)
+        df_embedded = pd.concat([df_embedded, df_contained], sort=False)
     else:
         df_embedded = pd.concat([df_embedded, df_contained])
     df_embedded['reads_per_nt'] = df_embedded.accumulation/df_embedded.length

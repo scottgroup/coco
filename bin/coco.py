@@ -19,6 +19,7 @@ __version__='0.2.2'
 # correct_count : added distribute_embedded_counts
 
 import sys
+import subprocess
 import os
 import tests
 
@@ -49,7 +50,9 @@ else:
     if run_mode in ['correct_annotation','correct_count','correct_bedgraph']:
         tests.check_dependencies(run_mode)
         print('Launching',run_mode)
-        os.system('python3 '+(os.path.realpath(__file__).replace('coco.py',''))+run_mode+'.py '+(' '.join(sys.argv[2:])))
+        x = os.system('python3 '+(os.path.realpath(__file__).replace('coco.py',''))+run_mode+'.py '+(' '.join(sys.argv[2:])))
+        if x != 0:
+            sys.exit(1)
     elif run_mode == '--help' or run_mode=='-h':
         print(help)
         sys.exit()

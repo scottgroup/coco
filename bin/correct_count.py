@@ -102,7 +102,7 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, infile,
                   infile)
     x = os.system(command)
     if x !=0:
-        sys.exit(x)
+        sys.exit(1)
     featurefile = '%s/%s.featureCounts'%(output_dir, os.path.basename(infile))
     distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, df_gtf,
                                                 output, v, chunksize, thread, ftype,df_gtf_intron)
@@ -199,12 +199,12 @@ def main():
         output_file = os.path.join(output_dir, os.path.basename(output))
         x = coco_unique(minOverlap, strand, thread, paired, gtf_file, output_file, bamfile, R_opt_unique,'')
         if x!=0 :
-            sys.exit(x)
+            sys.exit(1)
         # embedded correction
         x = coco_unique(minOverlap, strand, thread, paired, gtf_file_intron,
                         output_file+'.intron', bamfile, '', '-g transcript_id')
         if x!=0 :
-            sys.exit(x)
+            sys.exit(1)
         dist_emb.correct_embedded(df_gtf_intron, output_file, output_file + '.intron',
                                   output_file + '_final',count_type)
 
@@ -214,12 +214,12 @@ def main():
         unique_output = output_dir+'/unique_'+os.path.basename(output)
         x = coco_unique(minOverlap, strand, thread, paired, gtf_file, unique_output, bamfile, R_opt_unique,'')
         if x != 0:
-            sys.exit(x)
+            sys.exit(1)
         # embedded correction
         x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
                         unique_output+'.intron', bamfile, '', '-g transcript_id')
         if x != 0:
-            sys.exit(x)
+            sys.exit(1)
 
         x = extract_multi(output_dir, output, bamfile, thread)
         multibam = '%s/multi_%s.bam' % (output_dir, os.path.basename(output))

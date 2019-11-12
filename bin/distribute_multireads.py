@@ -81,7 +81,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     view_sam = 'samtools view %s.sorted.%s > %s.noheader.sam'%(samfile, ext, samfile)
     x = os.system(fetch_header + sort_sam + view_sam)
     if x !=0:
-        sys.exit(x)
+        sys.exit(1)
     sortedsam = '%s.sorted.%s'%(samfile,ext)
     os.remove(sortedsam)
     sam_noheader = samfile+'.noheader.sam'
@@ -103,7 +103,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
         # that are in different chunks. Ensures all reads are only counted once.
         last_name = df_chunk.tail(1).QNAME.values[0]
         if pd.__version__ >= '0.23.0':
-            df_chunk = pd.concat([df_chunk, df_last], sort=True)
+            df_chunk = pd.concat([df_chunk, df_last], sort=False)
         else:
             df_chunk = pd.concat([df_chunk, df_last])
         if n != total_chunk:
@@ -123,7 +123,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
         df_chunk = df_chunk.drop(['gene_id'], axis=1)
         df_merged = df_merged[['QNAME','FLAG','TAG2','gene_id', 'dist_counts']]
         if pd.__version__ >= '0.23.0':
-            df_count = pd.concat([df_count, df_merged[['gene_id','dist_counts']]], sort=True)
+            df_count = pd.concat([df_count, df_merged[['gene_id','dist_counts']]], sort=False)
         else:
             df_count = pd.concat([df_count, df_merged[['gene_id', 'dist_counts']]])
         df_merged['dist_counts'] = 'XC:f:'+df_merged['dist_counts'].round(decimals=3).map(str)
@@ -137,7 +137,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     sed = "sed -i 's/|/\t/g' %s.out.sam"%samfile
     x = os.system(sed)
     if x!=0:
-        sys.exit(x)
+        sys.exit(1)
     os.remove(samfile+'.'+ext)
     os.remove(sam_noheader)
     if R_opt == 'BAM':
