@@ -3,18 +3,53 @@ import subprocess
 import shutil
 from distutils.spawn import find_executable
 
+
+def find_repair(repair_file):
+    fC_path = find_executable('featureCounts')
+    potential_paths = [os.path.join(fC_path, os.pardir, 'utilities', 'repair'),
+                       os.path.join(fC_path, os.pardir, 'repair'),
+                       '/usr/lib/subread/repair']
+    found = 0
+    for p in potential_paths:
+        if os.path.exists(p):
+            with open(repair_file, 'w') as w:
+                w.write(p)
+            found = 1
+            break
+    return found
+
+
 def check_dependencies(run_mode):
     if run_mode=='correct_annotation':
         dependencies=['samtools','bedtools']
     elif run_mode == 'correct_count':
         dependencies = ['samtools', 'bedtools', 'featureCounts']
     elif run_mode == 'correct_bedgraph':
-        dependencies = ['samtools', 'bedtools', 'pairedBamToBed12','featureCounts']
+        dependencies = ['samtools', 'bedtools', 'pairedBamToBed12', 'featureCounts', 'repair']
     errors=[]
     for dependency in dependencies:
         exist=find_executable(dependency)
-        if exist==None:
+        if exist==None and dependency != 'repair':
             errors.append(dependency)
+        elif dependency == 'repair':
+            if 'featureCounts' in errors:
+                pass
+            else:
+                repair_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'repair_path.txt')
+                if os.path.exists(repair_file):
+                    with open(repair_file, 'r') as f:
+                        repair_path = f.readline().strip()
+                        if os.path.exists(repair_path) is True:
+                            found = 1
+                        else:
+                            found = find_repair(repair_file)
+
+                else:
+                    found = find_repair(repair_file)
+                if found == 0:
+                    errors.append('repair')
+                    print('Subread\'s repair executable was not found in standard paths. Please write the path in :'
+                          '%s' %repair_file)
     if len(errors) != 0:
         print('error: %s is/are not installed. Please read the README.md file '
               'for more information about the prerequisites of CoCo and help for their installation.' %(', '.join(errors)))

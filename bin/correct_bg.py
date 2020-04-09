@@ -122,6 +122,8 @@ def correct_bed12(df, nb_threads):
     df_bed12['nb_start'] = df_bed12.block_start.str.count(',')+1
     df_bed12 = df_bed12[df_bed12.nb_block == df_bed12.nb_start]
     df_bed12 = df_bed12.drop(['nb_start'], axis=1)
+    df_bed12 = df_bed12[['chromo', 'start', 'end', 'name', 'score', 'strand', 'thick_start',
+                         'thick_end', 'RGB', 'nb_block', 'block_len', 'block_start']]
     return df_bed12
 
 
