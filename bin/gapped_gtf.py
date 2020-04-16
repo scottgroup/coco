@@ -460,15 +460,28 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
         print('error: Wrong annotation format. Only .gtf files are accepted')
         sys.exit(1)
     df_gtf = dataframe(gtf_file, verbose)
-    try:
-        df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
-                       'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype',
-                       'transcript_support_level']]
-    except KeyError:
-        df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'strand', 'gene_id', 'transcript_id',
-                       'exon_number', 'gene_name', 'gene_biotype', 'transcript_name', 'transcript_biotype']]
+    col_names = df_gtf.columns.values.tolist()
+    if 'transcript_name' not in col_names:
+        df_gtf['transcript_name'] = df_gtf['gene_name']
+    if 'transcript_support_level' not in col_names:
         df_gtf['transcript_support_level'] = 'None'
         df_gtf.loc[df_gtf.feature!='gene', 'transcript_support_level'] = '5'
+    df_gtf = df_gtf[[
+        'seqname',
+        'source',
+        'feature',
+        'start',
+        'end',
+        'strand',
+        'gene_id',
+        'transcript_id',
+        'exon_number',
+        'gene_name',
+        'gene_biotype',
+        'transcript_name',
+        'transcript_biotype',
+        'transcript_support_level'
+    ]]
     df_gtf['seqname'] = df_gtf['seqname'].map(str)
     df_gtf['start'] = df_gtf['start'].map(int)
     df_gtf['end'] = df_gtf['end'].map(int)
