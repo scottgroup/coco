@@ -67,7 +67,7 @@ def extract_multi(output_dir, output, bamfile, thread):
     x = os.system(fetch_multi)
     if x!=0:
         if x == 256:
-            print('Input file does not have multimapped reads, skipping coco multi')
+            print('Input file does not have multimapped reads (based on NH tag), skipping coco multi')
             return x
         else:
             sys.exit('fetch_multi exit status %d' % x)

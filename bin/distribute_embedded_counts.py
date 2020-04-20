@@ -7,8 +7,8 @@ pd.set_option('expand_frame_repr',False)
 def correct_embedded(df_gtf, gene_file, intron_file, outfile,count_type):
     df_gtf = df_gtf[df_gtf.feature=='transcript']
     if count_type == 'uniqueOnly':
-        df_gene = distribute_multireads.read_count_matrix(gene_file)
-        df_counts = distribute_multireads.read_count_matrix(intron_file)
+        df_gene = distribute_multireads.read_count_matrix(gene_file, 'gene')
+        df_counts = distribute_multireads.read_count_matrix(intron_file, 'intron')
         df_counts = df_counts.rename(columns={'gene_id':'transcript_id'})
     else:
         df_gene = pd.read_csv(gene_file,sep='\t',names=['gene_id','accumulation'])
