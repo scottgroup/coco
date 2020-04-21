@@ -11,7 +11,7 @@ We've shown that the combination of these two corrections gives the best correla
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-
+CoCo is supported on Linux (Ubuntu, Fedora, CentOS).
 
 ### **Prerequisites**
 
@@ -98,7 +98,7 @@ For detailed information about the usage of every run modes, please refer to the
 * **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.* - [boiv2803](http://gitlabscottgroup.med.usherbrooke.ca/u/boiv2803)
 * **Michelle Scott** - *Mastermind of the project and awesome PI* - [scottgroup](http://scottgroup.med.usherbrooke.ca/)
 
-
+Questions should be directed to: _gabrielle.deschamps-francoeur@usherbrooke.ca_
 
 
 ## **License**
