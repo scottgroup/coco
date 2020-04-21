@@ -505,7 +505,7 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
 
     dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
     dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
-    dIntersect=intersect(dexon_host,dgene_embedded,output=os.path.join(outpath,'Intersect'), name=('exon_id','gene_id'))
+    dIntersect=intersect(dexon_host,dgene_embedded,output=output  + '.' + 'Intersect', name=('exon_id','gene_id'))
     dIntersect=dIntersect[dIntersect['overlap'] != -1]
     del dIntersect['overlap']
 
@@ -516,7 +516,7 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     else:
         other_emb = dgene_embedded
     other_emb = other_emb.rename(columns={'gene_id':'gene_id_emb'})
-    dIntersect_gene = intersect(dgene_host,other_emb,output=os.path.join(outpath,'Intersect'),
+    dIntersect_gene = intersect(dgene_host,other_emb,output=output + '.' + 'Intersect',
                                 name=('gene_id','gene_id_emb'))
     dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
     del dIntersect_gene['overlap']

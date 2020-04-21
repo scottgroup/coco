@@ -6,8 +6,8 @@ from distutils.spawn import find_executable
 
 def find_repair(repair_file):
     fC_path = find_executable('featureCounts')
-    potential_paths = [os.path.join(fC_path, os.pardir, 'utilities', 'repair'),
-                       os.path.join(fC_path, os.pardir, 'repair'),
+    potential_paths = [os.path.join(os.path.dirname(fC_path), 'utilities', 'repair'),
+                       os.path.join(os.path.dirname(fC_path), 'repair'),
                        '/usr/lib/subread/repair']
     found = 0
     for p in potential_paths:
