@@ -152,7 +152,14 @@ def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
             # reads the first line of the bedgraph
             line = f.readline()
         if line[0:3] != 'chr':
-            v = subprocess.check_output(['awk', '--version']).decode('utf-8').strip().split()[2].strip(',')
+            v = subprocess.check_output(['mawk', '-W', 'version']).decode('utf-8').strip().split()
+            if v[0] == "GNU":
+                v = v[2].strip(',')
+            elif v[0] == 'mawk':
+                v = v[1]
+            else :
+                print('Neither GNU awk or mawk is installed. Exiting.')
+                exit(1)
             if v >= '4.1.0':
                 add_chr = "awk -i inplace 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s "%(output)
             else:
