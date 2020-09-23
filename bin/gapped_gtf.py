@@ -443,6 +443,10 @@ def check_biotypes(df_gtf,biotypes_embedded):
     for biotype in biotypes_embedded:
         if biotype not in biotypes_in_gtf:
             print('Warning! gene_biotype %s is not present in the gtf.' %(biotype))
+    if len(set(biotypes_in_gtf) & set(biotypes_embedded)) == 0:
+        print('No embedded genes are present in the gtf file. No need to perform any correction.')
+        return False
+    return True
 
 
 def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
@@ -487,88 +491,90 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     df_gtf['end'] = df_gtf['end'].map(int)
     if output == 'None':
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
-    check_biotypes(df_gtf,biotypes_embedded)
-    outpath=os.path.dirname(output)
+    do_corr = check_biotypes(df_gtf,biotypes_embedded)
     df_gtf.loc[df_gtf['gene_name'].isnull(), 'gene_name'] = df_gtf['gene_id']
     df_gtf.loc[df_gtf['transcript_name'].isnull(),'transcript_name']=df_gtf['gene_name']
     df_gtf.loc[df_gtf['transcript_biotype'].isnull(),'transcript_biotype']=df_gtf['gene_biotype']
     df_gtf=df_gtf[df_gtf['feature'].isin(['gene','transcript','exon'])==True]
     df_gtf['exon_id'] = 'NaN'
     df_gtf.loc[df_gtf['feature']=='exon','exon_id'] = df_gtf['transcript_id'] + '.' + df_gtf['exon_number'].map(str).str.split('.').str.get(0)
-    dgene=df_gtf[df_gtf.feature == 'gene']
-    dgene['start']=dgene['start'].map(int)
-    dgene['end']=dgene['end'].map(int)
-    dgene['seqname']=dgene['seqname'].map(str)
-    #dgene=make_group_biotype(dgene)
-    dgene_embedded=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == True]
-    dgene_host=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == False]
+    if do_corr is True:
+        dgene=df_gtf[df_gtf.feature == 'gene']
+        dgene['start']=dgene['start'].map(int)
+        dgene['end']=dgene['end'].map(int)
+        dgene['seqname']=dgene['seqname'].map(str)
+        #dgene=make_group_biotype(dgene)
+        dgene_embedded=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == True]
+        dgene_host=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == False]
 
-    dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
-    dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
-    dIntersect=intersect(dexon_host,dgene_embedded,output=output  + '.' + 'Intersect', name=('exon_id','gene_id'))
-    dIntersect=dIntersect[dIntersect['overlap'] != -1]
-    del dIntersect['overlap']
+        dexon_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==True)]
+        dexon_not_host=df_gtf[(df_gtf.feature == 'exon') & (df_gtf['gene_id'].isin(dgene_host['gene_id'])==False)]
+        dIntersect=intersect(dexon_host,dgene_embedded,output=output  + '.' + 'Intersect', name=('exon_id','gene_id'))
+        dIntersect=dIntersect[dIntersect['overlap'] != -1]
+        del dIntersect['overlap']
 
-    if dIntersect.empty is False:
-        df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
-        emb_genes = df_overlapping_intron.gene_id_emb.unique()
-        other_emb = dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)]
-    else:
-        other_emb = dgene_embedded
-    other_emb = other_emb.rename(columns={'gene_id':'gene_id_emb'})
-    dIntersect_gene = intersect(dgene_host,other_emb,output=output + '.' + 'Intersect',
-                                name=('gene_id','gene_id_emb'))
-    dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
-    del dIntersect_gene['overlap']
-    if pd.__version__ >= '0.23.0' :
-        df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]],
-                             sort=False)
-        df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]],
-                            sort=False)
-    else:
-        df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]])
-        df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]])
-    df_intron_minus = fetch_closest_exons(dIntersect_gene, df_minus)
-    df_intron_plus = fetch_closest_exons(dIntersect_gene, df_plus)
-    if dIntersect.empty is False:
-        if pd.__version__ >= '0.23.0':
-            df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True, sort=False)
+        if dIntersect.empty is False:
+            df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
+            emb_genes = df_overlapping_intron.gene_id_emb.unique()
+            other_emb = dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)]
         else:
-            df_intron = pd.concat([df_intron_minus, df_intron_plus, df_overlapping_intron], ignore_index=True)
-    else:
-        if pd.__version__ >= '0.23.0':
-            df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True, sort=False)
+            other_emb = dgene_embedded
+        other_emb = other_emb.rename(columns={'gene_id':'gene_id_emb'})
+        dIntersect_gene = intersect(dgene_host,other_emb,output=output + '.' + 'Intersect',
+                                    name=('gene_id','gene_id_emb'))
+        dIntersect_gene = dIntersect_gene[dIntersect_gene['overlap'] != -1]
+        del dIntersect_gene['overlap']
+        if pd.__version__ >= '0.23.0' :
+            df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]],
+                                 sort=False)
+            df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]],
+                                sort=False)
         else:
-            df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True)
-    create_gtf(df_intron,df_gtf, output.replace('.gtf','.introns.gtf'))
-    if dIntersect.empty is False:
-        dexon_slice=drill_an_exon(dIntersect,dexon_host)
-        dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
-        if pd.__version__ >= '0.23.0':
-            dexon_host=pd.concat([dexon_host,dexon_slice], sort=False)
-            dexon=pd.concat([dexon_host,dexon_not_host], sort=False)
+            df_minus = pd.concat([dexon_host[(dexon_host.strand == '-')], dgene_embedded[(dgene_embedded.strand == '-')]])
+            df_plus = pd.concat([dexon_host[(dexon_host.strand == '+')], dgene_embedded[(dgene_embedded.strand == '+')]])
+        df_intron_minus = fetch_closest_exons(dIntersect_gene, df_minus)
+        df_intron_plus = fetch_closest_exons(dIntersect_gene, df_plus)
+        if dIntersect.empty is False:
+            if pd.__version__ >= '0.23.0':
+                df_intron = pd.concat([df_intron_minus,df_intron_plus,df_overlapping_intron],ignore_index=True, sort=False)
+            else:
+                df_intron = pd.concat([df_intron_minus, df_intron_plus, df_overlapping_intron], ignore_index=True)
         else:
-            dexon_host = pd.concat([dexon_host, dexon_slice])
-            dexon = pd.concat([dexon_host, dexon_not_host])
-        dexon=fix_exon_number(dexon)
+            if pd.__version__ >= '0.23.0':
+                df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True, sort=False)
+            else:
+                df_intron = pd.concat([df_intron_minus, df_intron_plus], ignore_index=True)
+        create_gtf(df_intron,df_gtf, output.replace('.gtf','.introns.gtf'))
+        if dIntersect.empty is False:
+            dexon_slice=drill_an_exon(dIntersect,dexon_host)
+            dexon_host=dexon_host[dexon_host['exon_id'].isin(dIntersect['exon_id']) == False]
+            if pd.__version__ >= '0.23.0':
+                dexon_host=pd.concat([dexon_host,dexon_slice], sort=False)
+                dexon=pd.concat([dexon_host,dexon_not_host], sort=False)
+            else:
+                dexon_host = pd.concat([dexon_host, dexon_slice])
+                dexon = pd.concat([dexon_host, dexon_not_host])
+            dexon=fix_exon_number(dexon)
 
-        df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
-        if pd.__version__ >= '0.23.0':
-            df_gtf=pd.concat([df_gtf,dexon], sort=False)
-        else:
-            df_gtf = pd.concat([df_gtf, dexon])
-    df_gtf = df_gtf.reset_index()
-    df_gtf.loc[df_gtf.gene_name.isnull(),'gene_name'] = df_gtf.gene_id
+            df_gtf=fix_gene_and_transcript_size(df_gtf,dexon)
+            if pd.__version__ >= '0.23.0':
+                df_gtf=pd.concat([df_gtf,dexon], sort=False)
+            else:
+                df_gtf = pd.concat([df_gtf, dexon])
+        df_gtf = df_gtf.reset_index()
+        df_gtf.loc[df_gtf.gene_name.isnull(),'gene_name'] = df_gtf.gene_id
     build_gapped_gtf(df_gtf,output)
+    if do_corr is False:
+        open(output.replace('.gtf','.introns.gtf'), 'w').close()
     print('All done!')
 
 
 if __name__=='__main__':
     if len(sys.argv)>1:
         if len(sys.argv)==2:
-            correct_annotation(gtf_file=sys.argv[1], output='None', biotypes_embedded=sys.argv[2])    #argv[2] should be the biotype_embedded_list
+            correct_annotation(gtf_file=sys.argv[1], output='None', verbose=False, biotypes_embedded=sys.argv[2])    #argv[2] should be the biotype_embedded_list
         else:
-            correct_annotation(gtf_file=sys.argv[1], output='None')
+            correct_annotation(gtf_file=sys.argv[1], output='None', verbose=False)
     else:
         print('error: Not enough arguments!')
         sys.exit(1)

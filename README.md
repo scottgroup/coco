@@ -52,7 +52,7 @@ And then you're pretty much done! You should have access to the **coco** command
  ```
 coco --help
 >>	CoCo: Count Corrector for embedded and multi-mapped genes.
-	Version: 0.2.2
+	Version: 0.2.4
 	Usage: CoCo <Run mode> <Run mode specific arguments>
 
 	Run modes:
@@ -143,7 +143,7 @@ and Multimapped Reads. Bioinformatics. 2019. Available from : <https://doi.org/1
 
 **featureCounts**: Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-30.
 
-**bedTools**: Quinlan AR, Hall IM. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinformatics. 2010;26(6):841-2.
+**BEDtools**: Quinlan AR, Hall IM. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinformatics. 2010;26(6):841-2.
 
 **samtools**: Li H, Handsaker B, Wysoker A, et al. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009;25(16):2078-9.
 

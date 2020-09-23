@@ -74,7 +74,12 @@ def add_pm_counts(count_file, df_gtf, bam_file, mean_insert_size=0):
     # gene instead, which is equivalent
     df_gtf.loc[df_gtf.length.isnull(),'length'] = df_gtf.end - df_gtf.start
     dcount = pd.read_csv(count_file, sep='\t', header=None, names=['gene_id', 'count'])
-    dcount[['count']] = dcount[['count']].astype(float)
+    try:
+        dcount[['count']] = dcount[['count']].astype(float)
+    except ValueError:
+        dcount = pd.read_csv(count_file, sep='\t', comment='#', usecols=['Geneid', bam_file])
+        dcount = dcount.rename(columns={'Geneid': 'gene_id', bam_file : 'count'})
+        dcount[['count']] = dcount[['count']].astype(float)
     Assigned = dcount['count'].sum()
     dcount['cpm'] = (dcount['count'].map(float) / Assigned) * 1E6
     dcount = pd.merge(dcount, df_gtf, how='right', on='gene_id')

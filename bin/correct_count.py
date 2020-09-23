@@ -25,6 +25,8 @@ def read_gtf(gtf_file):
                                 'strand', 'frame', 'attributes'],
                          dtype={'seqname': str, 'start': int, 'end': int},
                          usecols=['seqname', 'source', 'feature', 'start', 'end', 'attributes'])
+    if df_gtf.empty:
+        return df_gtf
     df_gtf['gene_id'] = df_gtf['attributes'].str.extract('gene_id\s"([^;]+);?"', expand=True)
     df_gtf['transcript_id'] = df_gtf['attributes'].str.extract('transcript_id\s"([^;]+);?"', expand=True)
     df_gtf['gene_name'] = df_gtf['attributes'].str.extract('gene_name\s"([^;]+);?"', expand=True)
@@ -195,6 +197,10 @@ def main():
     gtf_file_intron = gtf_file.replace('.gtf','.introns.gtf')
     df_gtf_full = read_gtf(gtf_file)
     df_gtf_intron = read_gtf(gtf_file_intron)
+    if df_gtf_intron.empty :
+        do_intron_corr = False
+    else:
+        do_intron_corr = True
 
     if count_type =='uniqueOnly':
         output_file = os.path.join(output_dir, os.path.basename(output))
@@ -202,12 +208,13 @@ def main():
         if x!=0 :
             sys.exit(1)
         # embedded correction
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file_intron,
-                        output_file+'.intron', bamfile, '', '-g transcript_id')
-        if x!=0 :
-            sys.exit(1)
-        dist_emb.correct_embedded(df_gtf_intron, output_file, output_file + '.intron',
-                                  output_file + '_final',count_type)
+        if do_intron_corr:
+            x = coco_unique(minOverlap, strand, thread, paired, gtf_file_intron,
+                            output_file+'.intron', bamfile, '', '-g transcript_id')
+            if x!=0 :
+                sys.exit(1)
+            dist_emb.correct_embedded(df_gtf_intron, output_file, output_file + '.intron',
+                                      output_file + '_final',count_type)
 
 
     elif count_type == 'both':
@@ -217,21 +224,23 @@ def main():
         if x != 0:
             sys.exit(1)
         # embedded correction
-        x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
-                        unique_output+'.intron', bamfile, '', '-g transcript_id')
-        if x != 0:
-            sys.exit(1)
+        if do_intron_corr:
+            x = coco_unique(minOverlap, strand, thread, paired, gtf_file.replace('.gtf','.introns.gtf'),
+                            unique_output+'.intron', bamfile, '', '-g transcript_id')
+            if x != 0:
+                sys.exit(1)
 
         x = extract_multi(output_dir, output, bamfile, thread)
         multibam = '%s/multi_%s.bam' % (output_dir, os.path.basename(output))
         if x == 0:
-            coco_multi(minOverlap, strand, thread, paired, gtf_file_intron,
-                       output + '.intron', multibam, unique_output, output_dir, R_opt_emb, v, chunksize,
-                       '-g transcript_id', 'intron', df_gtf_full, df_gtf_intron)
-            gc.collect()
-            intronfile = '%s/multi_%s.bam.featureCounts' % (output_dir, os.path.basename(output))
-            newintronfile = '%s/multi_%s.intron.bam.featureCounts' % (output_dir, os.path.basename(output))
-            os.rename(intronfile, newintronfile)
+            if do_intron_corr:
+                coco_multi(minOverlap, strand, thread, paired, gtf_file_intron,
+                           output + '.intron', multibam, unique_output, output_dir, R_opt_emb, v, chunksize,
+                           '-g transcript_id', 'intron', df_gtf_full, df_gtf_intron)
+                gc.collect()
+                intronfile = '%s/multi_%s.bam.featureCounts' % (output_dir, os.path.basename(output))
+                newintronfile = '%s/multi_%s.intron.bam.featureCounts' % (output_dir, os.path.basename(output))
+                os.rename(intronfile, newintronfile)
             coco_multi(minOverlap, strand, thread, paired, gtf_file, output, multibam,
                        unique_output, output_dir, R_opt_multi, v, chunksize,'','gene', df_gtf_full, None)
             gc.collect()
@@ -240,34 +249,39 @@ def main():
         else:
             os.rename(unique_output, output)
             os.rename(unique_output+'.summary', output+'.summary')
-            os.rename(unique_output+'.intron', output+'.intron')
-            os.rename(unique_output+'.intron.summary', output+'.intron.summary')
+            if do_intron_corr:
+                os.rename(unique_output+'.intron', output+'.intron')
+                os.rename(unique_output+'.intron.summary', output+'.intron.summary')
             count_type = 'uniqueOnly'
-        dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
-                                  output+'_final', count_type)
+        if do_intron_corr:
+            dist_emb.correct_embedded(df_gtf_intron, output, output + '.intron',
+                                      output+'_final', count_type)
 
     else:
         sys.exit(1)
 
     # doing some cleaning
-    os.remove(output + '.intron')
-    os.remove(output)
-    os.rename(output+'_final', output)
+    if do_intron_corr:
+        os.remove(output + '.intron')
+        os.remove(output)
+        os.rename(output+'_final', output)
 
     if count_type == 'uniqueOnly':
-        os.remove(output+'.intron.summary')
+        if do_intron_corr:
+            os.remove(output+'.intron.summary')
         os.remove(output + '.summary')
 
     elif  count_type == 'both':
-        os.remove(os.path.join(output_dir,'unique_'+os.path.basename(output))+'.intron.summary')
+        if do_intron_corr:
+            os.remove(os.path.join(output_dir,'unique_'+os.path.basename(output))+'.intron.summary')
+            os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)) + '.intron.summary')
+            os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)) + '.intron')
+            os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)) + '.intron')
         os.remove(os.path.join(output_dir, 'unique_'+os.path.basename(output)) + '.summary')
-        os.remove(os.path.join(output_dir,'multi_'+os.path.basename(output))+'.intron.summary')
         os.remove(os.path.join(output_dir,'multi_'+ os.path.basename(output)) + '.summary')
-        os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)) + '.intron')
-        os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)) + '.intron')
         os.remove(os.path.join(output_dir, 'unique_' + os.path.basename(output)))
         os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output)))
-        if R_opt != 'None':
+        if R_opt != 'None' and do_intron_corr:
             os.remove(os.path.join(output_dir, 'multi_' + os.path.basename(output))+'.intron.bam.featureCounts')
 
 
@@ -275,11 +289,19 @@ def main():
         genefile = '%s/multi_%s.bam.featureCounts'%(output_dir, os.path.basename(output))
         intronfile = '%s/multi_%s.intron.bam.featureCounts' % (output_dir, os.path.basename(output))
         os.remove(genefile)
-        os.remove(intronfile)
+        if do_intron_corr:
+            os.remove(intronfile)
 
     if rawonly!=True:
         count_to_cpm.add_pm_counts(output, df_gtf_full, bamfile,
                                    mean_insert_size=meanInsertSize)
+
+    if rawonly and count_type == 'uniqueOnly' and do_intron_corr is False:
+        dcount = pd.read_csv(output, sep='\t', comment='#', usecols=['Geneid', bamfile])
+        dcount = dcount.rename(columns={'Geneid': 'gene_id', bamfile : 'count'})
+        dcount[['count']] = dcount[['count']].astype(float)
+        dcount.to_csv(output, index=False, sep='\t', header=False)
+
     print('coco cc finished successfully')
 
 if __name__ == '__main__':
