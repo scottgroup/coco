@@ -6,7 +6,8 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.4'
+__version__='0.2.5'
+# New in version 0.2.5 : compatibility with pandas 1.0
 # New in version 0.2.4 : coco runs even if there are no embedded genes in the gtf file
 # New in version 0.2.3 : cc Search repair path before running
 #                        ca Better exon numbering, handles gtf without transcript name
