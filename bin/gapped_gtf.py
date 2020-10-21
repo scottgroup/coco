@@ -81,15 +81,12 @@ def make_group_biotype(biotype_dataf):
 def drill_an_exon(dIntersect,dexon_fix):
     print('Splitting exons overlapping embedded genes...')
     dIntersect=dIntersect.drop_duplicates()
-    dupplicate_serie=dIntersect.groupby(dIntersect['exon_id'],as_index=False).size()
-    dupplicate_quants=list(dupplicate_serie.values)
-    unique_keys=list(dupplicate_serie.keys())
-    dataf_dup=pd.DataFrame(data={'exon_id':unique_keys,
-                         'count':dupplicate_quants})
+    dataf_dup = dIntersect.groupby(dIntersect['exon_id'],as_index=False).size().reset_index()
+    dataf_dup = dataf_dup.rename(columns={0: 'size'})
     dIntersect=pd.merge(dIntersect,dataf_dup, on='exon_id', how='left')
 
-    dIntersect_first_slice=dIntersect[dIntersect['count']==1].copy(deep=True)
-    dIntersect_second_slice=dIntersect[dIntersect['count']==1].copy(deep=True)
+    dIntersect_first_slice=dIntersect[dIntersect['size']==1].copy(deep=True)
+    dIntersect_second_slice=dIntersect[dIntersect['size']==1].copy(deep=True)
 
     dIntersect_first_slice['end']=dIntersect_first_slice['start_2']
     dIntersect_first_slice=dIntersect_first_slice[dIntersect_first_slice['end'] > dIntersect_first_slice['start']]
@@ -102,7 +99,7 @@ def drill_an_exon(dIntersect,dexon_fix):
     dexon_slice=dexon_slice.sort_values(by=['exon_id'])
 
     ### Fixing for exons that have more than one embeded gene.
-    dIntersect_many_slice=dIntersect[dIntersect['count']>1].copy(deep=True)
+    dIntersect_many_slice=dIntersect[dIntersect['size']>1].copy(deep=True)
     dIntersect_many_slice.loc[dIntersect_many_slice['start_2']< dIntersect_many_slice['start'],'start_2']=dIntersect_many_slice['start']
     dIntersect_many_slice.loc[dIntersect_many_slice['end_2']> dIntersect_many_slice['end'],'end_2']=dIntersect_many_slice['end']
     dIntersect_many_slice=dIntersect_many_slice.sort_values(by=['exon_id','start_2'])
@@ -119,7 +116,13 @@ def drill_an_exon(dIntersect,dexon_fix):
         gap_list=sorted(unique_list(gap_list), key=lambda tup: tup[0])
         gap_list_gap_ends=[ value[0]-1 for value in gap_list ]+[row['end']]
         gap_list_gap_starts=[row['start']]+[ value[1]+1 for value in gap_list ]
-        dexon_temp=pd.DataFrame(data={'seqname':row['seqname'],'exon_id':row['exon_id'],'start':gap_list_gap_starts,'end':gap_list_gap_ends,'strand':row['strand'],'source':row['source'],'feature':row['feature'],'gene_id':row['gene_id'],'transcript_id':row['transcript_id'],'exon_number':row['exon_number'],'gene_name':row['gene_name'],'gene_biotype':row['gene_biotype'],'transcript_name':row['transcript_name'],'transcript_biotype':row['transcript_biotype'],'transcript_support_level':row['transcript_support_level'],'score':row['score']})
+        dexon_temp = pd.DataFrame(data={'seqname':row['seqname'],'exon_id':row['exon_id'],'start':gap_list_gap_starts,
+                                        'end':gap_list_gap_ends,'strand':row['strand'],'source':row['source'],
+                                        'feature':row['feature'],'gene_id':row['gene_id'],'transcript_id':row['transcript_id'],
+                                        'exon_number':row['exon_number'],'gene_name':row['gene_name'],
+                                        'gene_biotype':row['gene_biotype'],'transcript_name':row['transcript_name'],
+                                        'transcript_biotype':row['transcript_biotype'],
+                                        'transcript_support_level':row['transcript_support_level'],'score':row['score']})
         if pd.__version__ >= '0.23.0':
             dexon_more_than_one_fixed_exons=pd.concat([dexon_more_than_one_fixed_exons,dexon_temp], sort=False)
         else:
@@ -127,7 +130,8 @@ def drill_an_exon(dIntersect,dexon_fix):
         dexon_more_than_one_fixed_exons=dexon_more_than_one_fixed_exons[dexon_more_than_one_fixed_exons['end']-dexon_more_than_one_fixed_exons['start']>1]
     dexon_more_than_one_fixed_exons=dexon_more_than_one_fixed_exons[dexon_more_than_one_fixed_exons['end']-dexon_more_than_one_fixed_exons['start']>1]
     dexon_slice=dexon_slice[['seqname','start','end','exon_id','strand']]
-    dexon_fix=dexon_fix[['gene_id', 'transcript_id', 'exon_number', 'feature', 'gene_name', 'gene_biotype', 'source', 'transcript_name', 'transcript_biotype', 'transcript_support_level', 'exon_id', 'score']]
+    dexon_fix = dexon_fix[['gene_id', 'transcript_id', 'exon_number', 'feature', 'gene_name', 'gene_biotype', 'source',
+                         'transcript_name', 'transcript_biotype', 'transcript_support_level', 'exon_id', 'score']]
     dexon_slice=pd.merge(dexon_slice,dexon_fix,how='left',on='exon_id')
     if pd.__version__ >= '0.23.0':
         dexon_slice = pd.concat([dexon_slice, dexon_more_than_one_fixed_exons], sort=False)
@@ -154,18 +158,15 @@ def fix_exon_number(dexon):
     if 'exon_number' in dexon.columns:
         dexon[['exon_number']] = dexon[['exon_number']].astype(str)
     del dexon_minus, dexon_plus
-    dupplicate_serie=dexon.groupby(dexon['transcript_id'],as_index=False).size()
-    dupplicate_quants=list(dupplicate_serie.values)
-    unique_keys=list(dupplicate_serie.keys())
-    dataf_dup=pd.DataFrame(data={'transcript_id':unique_keys,
-                         'count':dupplicate_quants})
+    dataf_dup = dexon.groupby(dexon['transcript_id'],as_index=False).size().reset_index()
+    dataf_dup = dataf_dup.rename(columns={0: 'size'})
     dexon=pd.merge(dexon,dataf_dup, on='transcript_id', how='left')
     dexon_temp=dexon.copy(deep=True)
     dexon_temp['old_index']=dexon_temp.index
     dexon_temp=dexon_temp.drop_duplicates(subset='transcript_id')
     dexon=pd.merge(dexon,dexon_temp[['transcript_id','old_index']],how='left',on='transcript_id')
     dexon['exon_number']=dexon.index-dexon['old_index']+1
-    del dexon['old_index'],dexon['count']
+    del dexon['old_index'],dexon['size']
     dexon['exon_id']=dexon['transcript_id']+'.'+dexon['exon_number'].map(str)
     return dexon
 
@@ -245,8 +246,8 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_contained = df_merged[(df_merged.over5p == 0) & (df_merged.over3p == 0)].copy(deep=True)
     df_contained=df_contained.rename(columns={'gene_id':'gene_id_host'})
     df_contained.drop(['over3p', 'over5p'],axis=1, inplace=True)
-    df_temp = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)[
-        'start_emb', 'end_emb', 'over5p', 'over3p'].max()
+    df_temp = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)[[
+        'start_emb', 'end_emb', 'over5p', 'over3p']].max()
 
     df_temp = df_temp.merge(df_temp[['gene_id_emb', 'gene_id_host']], on='gene_id_host', suffixes=['', '_other'])
     df_overlap = df_temp[['gene_id_emb', 'gene_id_host', 'over5p', 'over3p']].copy(deep=True)
@@ -255,7 +256,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     df_temp = df_temp.merge(df_gtf[df_gtf.feature == 'exon'], left_on='gene_id_emb_other', right_on='gene_id')
     df_temp.drop(['gene_id_emb_other'],axis=1, inplace=True)
     df_merged = df_merged[(df_merged.over5p != 0) | (df_merged.over3p != 0)]
-    df_paired = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)['start_emb', 'end_emb'].last()
+    df_paired = df_merged.groupby(['gene_id_emb', 'gene_id_host'], as_index=False)[['start_emb', 'end_emb']].last()
     df_paired = df_paired.merge(df_gtf[df_gtf.feature == 'exon'], left_on='gene_id_host', right_on='gene_id')
     if pd.__version__ >= '0.23.0':
         df_paired = pd.concat([df_paired, df_temp, df_contained], sort=False)
@@ -282,8 +283,8 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
 
     df_paired['min5p'] = df_paired[['diff5p_intron_host', 'diff5p_exon','diff5p_intron_all']].min(axis=1)
     df_paired['min3p'] = df_paired[['diff3p_intron_host', 'diff3p_exon','diff3p_intron_all']].min(axis=1)
-    df_grouped = df_paired.groupby(['gene_id_emb', 'start_emb', 'end_emb', 'over5p', 'over3p'])[
-         'gene_id_host', 'min5p', 'min3p'].min().reset_index()
+    df_grouped = df_paired.groupby(['gene_id_emb', 'start_emb', 'end_emb', 'over5p', 'over3p'])[[
+         'gene_id_host', 'min5p', 'min3p']].min().reset_index()
     del df_paired
     df_grouped['left_start'] = df_grouped.start_emb - df_grouped.min5p.astype(int)
     df_grouped['left_end'] = df_grouped.start_emb - 1
