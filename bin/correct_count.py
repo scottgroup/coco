@@ -74,7 +74,7 @@ def extract_multi(output_dir, output, bamfile, thread):
             return x
         else:
             sys.exit('fetch_multi exit status %d' % x)
-    samtobam = 'samtools view -bS -@ %d %s/multi_%s.sam > %s/multi_%s.bam'%(thread, output_dir, output_name, output_dir,
+    samtobam = 'samtools view -bS -@ %d %s/multi_%s.sam > %s/multi_%s.bam'%(thread - 1 , output_dir, output_name, output_dir,
                                                                             output_name)
     x = os.system(samtobam)
     if x!=0:

@@ -5,13 +5,13 @@ outpath=$2
 output_name=$3
 threads=$4
 
-read repair < $(dirname $0)/repair_path.txt
+read repair < $(dirname $0)/repair_path.txt;
 
 # Keep only properly paired reads
 samtools view -bf 0x2 -@ ${threads} ${bamfile} > ${outpath}/${output_name}_properpair.bam &&
 
 # Sort file by name and HI tag to keep the right mates together
-echo 'sorting'
+echo 'sorting' &&
 
 $repair -T $threads -i ${outpath}/${output_name}_properpair.bam -o ${outpath}/${output_name}_properpair.sorted.bam &&
 

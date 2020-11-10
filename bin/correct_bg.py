@@ -7,8 +7,8 @@ import subprocess
 import shutil
 
 def prepare_bed12(bamfile, output_dir, output_name, thread):
-    command = 'bash %s/prepare_bed12.sh %s %s %s %s'%(os.path.dirname(__file__),bamfile,
-                                               output_dir, output_name, thread)
+    command = 'bash %s/prepare_bed12.sh %s %s %s %s'%(os.path.dirname(__file__), bamfile,
+                                                      output_dir, output_name, thread - 1)
     x = os.system(command)
     return x
 

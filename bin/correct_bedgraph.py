@@ -68,3 +68,4 @@ for filename in filelist:
             df_corrected.to_csv(outfile, index=False, header=False, sep='\t', mode=mode)
 os.remove('%s/%s.bed12'%(output_dir,temp_dir))
 correct_bg.genome_cov(output_dir,temp_dir, output, genomepath, ucsc)
+os.remove('%s/corrected_%s.bed12'%(output_dir,temp_dir))

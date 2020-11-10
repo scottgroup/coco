@@ -77,7 +77,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     '''
     ext = R_opt.lower()
     fetch_header = 'samtools view -H %s.%s > %s.out.sam && '%(samfile,ext,samfile)
-    sort_sam = 'samtools sort -n -o %s.sorted.%s -@ %s %s.%s && '%(samfile, ext, nb_threads, samfile, ext)
+    sort_sam = 'samtools sort -n -o %s.sorted.%s -@ %s %s.%s && '%(samfile, ext, nb_threads - 1, samfile, ext)
     view_sam = 'samtools view %s.sorted.%s > %s.noheader.sam'%(samfile, ext, samfile)
     x = os.system(fetch_header + sort_sam + view_sam)
     if x !=0:
@@ -141,7 +141,7 @@ def distribute_samfile(samfile, chunksize, df_unique, nb_threads, R_opt):
     os.remove(samfile+'.'+ext)
     os.remove(sam_noheader)
     if R_opt == 'BAM':
-        samtobam = 'samtools view -b -@ %d %s.out.sam > %s.out.bam && rm %s.out.sam'%(nb_threads, samfile, samfile,
+        samtobam = 'samtools view -b -@ %d %s.out.sam > %s.out.bam && rm %s.out.sam'%(nb_threads - 1, samfile, samfile,
                                                                                      samfile)
         x = os.system(samtobam)
         if x!=0:

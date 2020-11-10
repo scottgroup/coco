@@ -63,21 +63,6 @@ def intersect(dataf1,dataf2,output='./Intersect',name=('name','name'),score=0,ke
     return Intersect_dataf
 
 
-def make_group_biotype(biotype_dataf):
-    biotype_group_dict={'protein_coding':['IG_C_gene', 'IG_D_gene', 'IG_gene', 'IG_J_gene', 'IGLV_gene', 'IGM_gene', 'IG_V_gene', 'IGZ_gene', 'nonsense_mediated_decay', 'nontranslating_CDS', 'non_stop_decay', 'polymorphic_pseudogene', 'protein_coding', 'TR_C_gene', 'TR_D_gene', 'TR_J_gene'],
-                        'pseudogene':['disrupted_domain', 'IG_C_pseudogene', 'IG_J_pseudogene', 'IG_pseudogene', 'IG_V_pseudogene', 'processed_pseudogene', 'transcribed_processed_pseudogene', 'transcribed_unitary_pseudogene', 'transcribed_unprocessed_pseudogene', 'translated_processed_pseudogene', 'TR_J_pseudogene', 'TR_V_pseudogene', 'unitary_pseudogene', 'unprocessed_pseudogene'],
-                        'Long_noncoding':['3prime_overlapping_ncrna', 'ambiguous_orf', 'antisense', 'antisense_RNA', 'lincRNA', 'ncrna_host', 'processed_transcript', 'sense_intronic', 'sense_overlapping'],
-                        'snoRNA':['snoRNA'],'snRNA':['snRNA'],'scaRNA':['scaRNA'],'miRNA':['miRNA'],'tRNA':['tRNA','Mt_tRNA'],'7SL':['7SL'],'7SK':['7SK']}
-    biotype_dataf.loc[biotype_dataf['gene_name'].str.contains('7SL') == True,'gene_biotype']='7SL'
-    biotype_dataf.loc[biotype_dataf['gene_name'].str.contains('Metazoa_SRP') == True,'gene_biotype']='7SL'
-    biotype_dataf.loc[biotype_dataf['gene_name'].str.contains('7SK') == True,'gene_biotype']='7SK'
-    biotype_dataf.loc[(biotype_dataf['gene_name'].str.contains('SCA') == True) & (biotype_dataf['gene_biotype'] == 'snoRNA'),'gene_biotype']='scaRNA'
-    for biotype_group in biotype_group_dict:
-        biotype_dataf.loc[biotype_dataf['gene_biotype'].isin(biotype_group_dict[biotype_group]) == True,'gene_biotype_group']=biotype_group
-    biotype_dataf.loc[biotype_dataf['gene_biotype_group'].isnull() == True,'gene_biotype_group']='Other'
-    return biotype_dataf
-
-
 def drill_an_exon(dIntersect,dexon_fix):
     print('Splitting exons overlapping embedded genes...')
     dIntersect=dIntersect.drop_duplicates()
@@ -570,12 +555,3 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     print('All done!')
 
 
-if __name__=='__main__':
-    if len(sys.argv)>1:
-        if len(sys.argv)==2:
-            correct_annotation(gtf_file=sys.argv[1], output='None', verbose=False, biotypes_embedded=sys.argv[2])    #argv[2] should be the biotype_embedded_list
-        else:
-            correct_annotation(gtf_file=sys.argv[1], output='None', verbose=False)
-    else:
-        print('error: Not enough arguments!')
-        sys.exit(1)
