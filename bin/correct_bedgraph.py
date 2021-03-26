@@ -25,6 +25,7 @@ parser.add_argument("-c", "--chunk_size", help="number of rows to treat at a tim
 parser.add_argument("-u", "--ucsc_compatible", help="Add trackline and 'chr' prefix if needed.", action="store_true")
 parser.add_argument("-t", "--thread", help="Number of threads to be used. Default: 1", type=int,
                     default=1)
+parser.add_argument("--bed12", help="Keep intermediate bed12 files. Default: False", action="store_true")
 args = parser.parse_args()
 
 
@@ -35,6 +36,7 @@ chunk_size = args.chunk_size
 ucsc = args.ucsc_compatible
 genomepath = args.genomepath
 thread = args.thread
+keep_bed12 = args.bed12
 
 tests.check_bam(bamfile)
 
@@ -66,6 +68,7 @@ for filename in filelist:
                 mode = 'a'
             df_corrected = correct_bg.correct_bed12(df_chunk, thread)
             df_corrected.to_csv(outfile, index=False, header=False, sep='\t', mode=mode)
-os.remove('%s/%s.bed12'%(output_dir,temp_dir))
+if keep_bed12 is False:
+    os.remove('%s/%s.bed12'%(output_dir,temp_dir))
 correct_bg.genome_cov(output_dir,temp_dir, output, genomepath, ucsc)
 os.remove('%s/corrected_%s.bed12'%(output_dir,temp_dir))

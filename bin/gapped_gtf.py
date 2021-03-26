@@ -321,7 +321,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
         print('Warning! The intron correction will not be done on the following genes because of their particular situation:\n%s'
           %('\n'.join(weird_list)))
     df_final = df_final[~df_final.gene_id_emb.isin(weird_list)]
-    return df_final
+    return df_final, weird_list
 
 
 def create_gtf(df_intron, df_gtf, output):
@@ -439,7 +439,7 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     """
     correct_annotation builds a new gtf from the one provided, with holes on exons from genes that overlap the specified embedded biotypes.
     Read the MANUAL.md for extensive description.
-    :param gtf_file: orifinal gtf file
+    :param gtf_file: original gtf file
     :param biotypes_embedded: list of the embedded biotypes. Default: 'snoRNA','scaRNA','tRNA','miRNA' and 'snRNA'
     :output: modified gtf file with the .correct_annotation.gtf prefix.
     """
@@ -489,7 +489,6 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
         dgene['start']=dgene['start'].map(int)
         dgene['end']=dgene['end'].map(int)
         dgene['seqname']=dgene['seqname'].map(str)
-        #dgene=make_group_biotype(dgene)
         dgene_embedded=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == True]
         dgene_host=dgene[dgene['gene_biotype'].isin(biotypes_embedded) == False]
 
@@ -500,8 +499,8 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
         del dIntersect['overlap']
 
         if dIntersect.empty is False:
-            df_overlapping_intron = fetch_overlapping_intron(dIntersect, df_gtf)
-            emb_genes = df_overlapping_intron.gene_id_emb.unique()
+            df_overlapping_intron, emb_genes = fetch_overlapping_intron(dIntersect, df_gtf)
+            emb_genes.extend(df_overlapping_intron.gene_id_emb.unique().tolist())
             other_emb = dgene_embedded[~dgene_embedded['gene_id'].isin(emb_genes)]
         else:
             other_emb = dgene_embedded

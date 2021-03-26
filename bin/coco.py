@@ -6,7 +6,10 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.5p1'
+__version__='0.2.6'
+# New in version 0.2.6 : don't check dependencies before printing help
+#                        Do not correct very weird cases in coco ca
+#                        Option to keep intermediate bed12 files in coco cb
 # New in version 0.2.5p1 : adjusted samtools threads to be "Number of additional threads to use"
 # New in version 0.2.5 : compatibility with pandas 1.0
 # New in version 0.2.4 : coco runs even if there are no embedded genes in the gtf file
@@ -53,7 +56,12 @@ else:
     if run_mode in run_mode_dict:
         run_mode = run_mode_dict[run_mode]
     if run_mode in ['correct_annotation','correct_count','correct_bedgraph']:
-        tests.check_dependencies(run_mode)
+        try :
+            if sys.argv[2] != '--help' and sys.argv[2] != '-h' :
+                tests.check_dependencies(run_mode)
+        except IndexError:
+            print("Try coco %s --help to show usage"%sys.argv[1])
+            exit(1)
         print('Launching',run_mode)
         x = os.system('python3 '+(os.path.realpath(__file__).replace('coco.py',''))+run_mode+'.py '+(' '.join(sys.argv[2:])))
         if x != 0:
