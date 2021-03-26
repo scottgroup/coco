@@ -68,7 +68,8 @@ for filename in filelist:
                 mode = 'a'
             df_corrected = correct_bg.correct_bed12(df_chunk, thread)
             df_corrected.to_csv(outfile, index=False, header=False, sep='\t', mode=mode)
-if keep_bed12 is False:
-    os.remove('%s/%s.bed12'%(output_dir,temp_dir))
+
+os.remove('%s/%s.bed12'%(output_dir,temp_dir))
 correct_bg.genome_cov(output_dir,temp_dir, output, genomepath, ucsc)
-os.remove('%s/corrected_%s.bed12'%(output_dir,temp_dir))
+if keep_bed12 is False:
+    os.remove('%s/corrected_%s.bed12'%(output_dir,temp_dir))
