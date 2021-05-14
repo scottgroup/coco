@@ -475,6 +475,10 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     df_gtf['seqname'] = df_gtf['seqname'].map(str)
     df_gtf['start'] = df_gtf['start'].map(int)
     df_gtf['end'] = df_gtf['end'].map(int)
+    gene_biotype_dict = df_gtf[df_gtf.feature == 'gene'][[
+        'gene_id', 'gene_biotype']].copy(deep=True).set_index('gene_id').gene_biotype.to_dict()
+    df_gtf.loc[df_gtf.gene_biotype.isnull(), 'gene_biotype'] = df_gtf.loc[df_gtf.gene_biotype.isnull(), 'gene_id'].map(
+        gene_biotype_dict)
     if output == 'None':
         output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
     do_corr = check_biotypes(df_gtf,biotypes_embedded)
