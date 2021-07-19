@@ -52,7 +52,7 @@ And then you're pretty much done! You should have access to the **coco** command
  ```
 coco --help
 >>	CoCo: Count Corrector for embedded and multi-mapped genes.
-	Version: 0.2.6
+	Version: 0.2.7
 	Usage: CoCo <Run mode> <Run mode specific arguments>
 
 	Run modes:

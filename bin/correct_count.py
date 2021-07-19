@@ -108,7 +108,7 @@ def coco_multi(minOverlap, strand, thread, paired, gtf_file, output, infile,
         sys.exit(1)
     featurefile = '%s/%s.featureCounts'%(output_dir, os.path.basename(infile))
     distribute_multireads.distribute_multireads(featurefile, unique_counts, R_opt, df_gtf,
-                                                output, v, chunksize, thread, ftype,df_gtf_intron)
+                                                output, v, chunksize, thread, ftype, df_gtf_intron)
 
 
 def main():
@@ -192,7 +192,10 @@ def main():
     if paired != True:
         paired = ''
     else:
-        paired = '-p '
+        if v >= 'v2.0.2':
+            paired = '-p --countReadPairs '
+        else:
+            paired = '-p '
 
     gtf_file_intron = gtf_file.replace('.gtf','.introns.gtf')
     df_gtf_full = read_gtf(gtf_file)

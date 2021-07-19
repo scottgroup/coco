@@ -6,7 +6,8 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.6'
+__version__='0.2.7'
+# New in version 0.2.7 : Added --countReadPairs argument for featureCounts v2.0.2 and higher
 # New in version 0.2.6 : don't check dependencies before printing help
 #                        Do not correct very weird cases in coco ca
 #                        Option to keep intermediate bed12 files in coco cb
