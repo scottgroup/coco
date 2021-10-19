@@ -3,7 +3,8 @@ pd.options.mode.chained_assignment = None
 pd.set_option('display.width', 400)
 import sys, os
 import csv
-from gtf import dataframe
+import re
+import gzip
 
 def getoverlap(a, b):
     if max(0, min(a[1], b[1]) - max(a[0], b[0])) > 0:
@@ -187,9 +188,19 @@ def build_gapped_gtf(df_gtf,output):
     df_gtf.loc[df_gtf['feature'] == 'zexon','feature']='exon'
     df_gtf=df_gtf.reset_index(drop=True)
     df_gtf['transcript_support_level']=df_gtf['transcript_support_level'].fillna(value='NA')
-    df_gtf.loc[df_gtf['feature'] == 'gene','attribute']='gene_id "'+df_gtf['gene_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'";'
-    df_gtf.loc[df_gtf['feature'] == 'transcript','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; transcript_support_level "'+df_gtf['transcript_support_level']+'";'
-    df_gtf.loc[df_gtf['feature'] == 'exon','attribute']='gene_id "'+df_gtf['gene_id']+'"; transcript_id "'+df_gtf['transcript_id']+'"; exon_number "'+df_gtf['exon_number']+'"; gene_name "'+df_gtf['gene_name']+'"; gene_source "'+df_gtf['source']+'"; gene_biotype "'+df_gtf['gene_biotype']+'"; transcript_name "'+df_gtf['transcript_name']+'"; transcript_biotype "'+df_gtf['transcript_biotype']+'"; transcript_support_level "'+df_gtf['transcript_support_level']+'"; exon_id "'+df_gtf['exon_id']+'";'
+    df_gtf['attribute'] = ''
+    for att in ['gene_id', 'gene_name', 'gene_biotype']:
+        df_gtf.loc[~df_gtf[att].isnull(), 'attribute'] = df_gtf.loc[~df_gtf[att].isnull(), 'attribute'] \
+                                                         + att + ' "' + df_gtf.loc[~df_gtf[att].isnull(), att] + '"; '
+    for att in ['transcript_id', 'transcript_name', 'transcript_biotype', 'transcript_support_level']:
+        df_gtf.loc[(df_gtf['feature'] != 'gene') & (~df_gtf[att].isnull()), 'attribute'] = \
+            df_gtf.loc[(df_gtf['feature'] != 'gene') & (~df_gtf[att].isnull()), 'attribute'] + att + ' "' \
+            + df_gtf.loc[(df_gtf['feature'] != 'gene') & (~df_gtf[att].isnull()), att] + '"; '
+    for att in ['exon_number', 'exon_id']:
+        df_gtf.loc[(df_gtf['feature'] == 'exon') & (~df_gtf[att].isnull()), 'attribute'] = \
+            df_gtf.loc[(df_gtf['feature'] == 'exon') & (~df_gtf[att].isnull()), 'attribute'] + att + ' "' \
+            + df_gtf.loc[(df_gtf['feature'] == 'exon') & (~df_gtf[att].isnull()), att] + '"; '
+    df_gtf['attribute'] = df_gtf['attribute'].str.strip()
     df_gtf['score']='.'
     df_gtf['frame']='.'
     df_gtf=df_gtf[['seqname', 'source', 'feature', 'start', 'end', 'score', 'strand', 'frame','attribute']]
@@ -435,6 +446,48 @@ def check_biotypes(df_gtf,biotypes_embedded):
     return True
 
 
+def read_gtf(gtf_file, verbose=False):
+    if verbose:
+        print('Reading gtf')
+    gtf_list = []
+    # Open an optionally gzipped file
+    fn_open = gzip.open if gtf_file.endswith('.gz') else open
+    with fn_open(gtf_file) as f:
+        for line in f:
+            try:
+                line = line.decode('utf-8')
+            except AttributeError:
+                pass
+            if line[0] == '#':
+                continue
+            line = line.strip()
+            line = line.split('\t')
+            if line[2] not in ['gene', 'transcript', 'exon']:
+                continue
+            cols_to_keep = [0, 1, 2, 3, 4, 5, 6]
+            attribute = line[8]
+            gtf_entry = [item for idx, item in enumerate(line) if idx in cols_to_keep]
+            att_list = ['gene_id', 'transcript_id', 'exon_number', 'gene_name', 'gene_biotype', 'transcript_name',
+                        'exon_id', 'transcript_biotype', 'transcript_support_level', 'gene']
+            for att in att_list:
+                try:
+                    res = re.search(att + '\s"([^;]+);?"' , attribute).group(1)
+                except AttributeError:
+                    res = None
+                gtf_entry.append(res)
+            gtf_list.append(gtf_entry)
+    df_gtf = pd.DataFrame(gtf_list,
+                          columns=['seqname', 'source', 'feature', 'start', 'end', 'score', 'strand',
+                                   'gene_id', 'transcript_id', 'exon_number', 'gene_name',
+                                   'gene_biotype', 'transcript_name', 'exon_id',
+                                   'transcript_biotype', 'transcript_support_level', 'gene'])
+    df_gtf.loc[(df_gtf.gene_name.isnull()) &
+               (df_gtf.gene.notnull()), 'gene_name'] = df_gtf.loc[(df_gtf.gene_name.isnull()) &
+                                                                  (df_gtf.gene.notnull()), 'gene']
+    df_gtf[['start', 'end']] = df_gtf[['start', 'end']].astype(int)
+    return df_gtf
+
+
 def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
     """
     correct_annotation builds a new gtf from the one provided, with holes on exons from genes that overlap the specified embedded biotypes.
@@ -443,19 +496,14 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     :param biotypes_embedded: list of the embedded biotypes. Default: 'snoRNA','scaRNA','tRNA','miRNA' and 'snRNA'
     :output: modified gtf file with the .correct_annotation.gtf prefix.
     """
-    if gtf_file.endswith('.gtf')==True:
+    if gtf_file.endswith('.gtf') or gtf_file.endswith('.gtf.gz'):
         print('Reading gtf')
     else:
         print('Annotation file:',gtf_file)
-        print('error: Wrong annotation format. Only .gtf files are accepted')
+        print('error: Wrong annotation format. Only .gtf and .gtf.gz files are accepted')
         sys.exit(1)
-    df_gtf = dataframe(gtf_file, verbose)
-    col_names = df_gtf.columns.values.tolist()
-    if 'transcript_name' not in col_names:
-        df_gtf['transcript_name'] = df_gtf['gene_name']
-    if 'transcript_support_level' not in col_names:
-        df_gtf['transcript_support_level'] = 'None'
-        df_gtf.loc[df_gtf.feature!='gene', 'transcript_support_level'] = '5'
+    df_gtf = read_gtf(gtf_file, verbose)
+    df_gtf.loc[(df_gtf.feature != 'gene') & (df_gtf.transcript_support_level.isnull()), 'transcript_support_level'] = '5'
     df_gtf = df_gtf[[
         'seqname',
         'source',
@@ -480,7 +528,7 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     df_gtf.loc[df_gtf.gene_biotype.isnull(), 'gene_biotype'] = df_gtf.loc[df_gtf.gene_biotype.isnull(), 'gene_id'].map(
         gene_biotype_dict)
     if output == 'None':
-        output = gtf_file.replace('.gtf', '.correct_annotation.gtf')
+        output = gtf_file.rsplit('.gtf', 1)[0] + '.correct_annotation.gtf'
     do_corr = check_biotypes(df_gtf,biotypes_embedded)
     df_gtf.loc[df_gtf['gene_name'].isnull(), 'gene_name'] = df_gtf['gene_id']
     df_gtf.loc[df_gtf['transcript_name'].isnull(),'transcript_name']=df_gtf['gene_name']

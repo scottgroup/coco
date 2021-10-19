@@ -52,7 +52,7 @@ And then you're pretty much done! You should have access to the **coco** command
  ```
 coco --help
 >>	CoCo: Count Corrector for embedded and multi-mapped genes.
-	Version: 0.2.7
+	Version: 0.2.8
 	Usage: CoCo <Run mode> <Run mode specific arguments>
 
 	Run modes:
@@ -133,7 +133,6 @@ and Multimapped Reads. Bioinformatics. 2019. Available from : <https://doi.org/1
 
 * Hat tip to Fabien Dupuis-Sandoval for starting this project from scratch.
 * Many thanks to Jean-Michel Garant for his general wisdom.
-* Thanks to Kamil Slowikowski [slowkow](https://gist.github.com/slowkow) for its GTF.py script that is used by correct_annotation.
 
 
 

@@ -45,8 +45,6 @@ def get_true_length_from_gtf(df_gtf):
 def add_pm_counts(count_file, df_gtf, bam_file, mean_insert_size=0):
     """
     Takes the input featureCounts output count file and modifies it to add CPM and TPM values. (adds gene_name as well).
-    Uses the gtf.py script to read the gtf in a dataframe format. Takes about a minute to do so. You may skip the use of
-    that script by specifying the --rawOnly option in CorrectCount.
 
     :param count_file: featureCounts count file.
     :param df_gtf: dataframe containing the gtf information.

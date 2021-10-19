@@ -6,7 +6,9 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.7'
+__version__='0.2.8'
+# New in version 0.2.8 : Better handling of gtf files: faster and lighter reading, compatibility with RefSeq "gene" attribute,
+#                        handling of missing attributes
 # New in version 0.2.7 : Added --countReadPairs argument for featureCounts v2.0.2 and higher
 # New in version 0.2.6 : don't check dependencies before printing help
 #                        Do not correct very weird cases in coco ca

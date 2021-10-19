@@ -1,7 +1,7 @@
 import os,sys
 import subprocess
-import shutil
 from distutils.spawn import find_executable
+import gzip
 
 
 def find_repair(repair_file):
@@ -78,9 +78,15 @@ def check_bam(bam_file):
             sys.exit(1)
 
 
-def check_gtf(gtf_file,check_gene_biotype=False):
-    with open(gtf_file,'r') as f:
+def check_gtf(gtf_file, check_gene_biotype=False):
+    # Open an optionally gzipped file
+    fn_open = gzip.open if gtf_file.endswith('.gz') else open
+    with fn_open(gtf_file,'r') as f:
         for line in f:
+            try:
+                line = line.decode('utf-8')
+            except AttributeError:
+                pass
             if line.startswith('#')==False:
                 if line.split('\t')[2] == 'gene':
                     gene_test_line=line
