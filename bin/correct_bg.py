@@ -77,30 +77,31 @@ def correct_bed12(df, nb_threads):
     del results
 
     # Keep reads with no overlaps unchanged and remove from main df
-    df_wo_overlap = df[df.r1_start == -1]
-    df = df[df.r1_start != -1]
+    df_wo_overlap = df[df.r1_start == -1].copy(deep=True)
+    df = df[df.r1_start != -1].copy(deep=True)
     df_wo_overlap = df_wo_overlap.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
 
     # Keep only R1 for identical pair and remove from main df
-    df_identical = df[(df.r1_start == df.r2_start) & (df.r1_len == df.r2_len)]
-    df = df[(df.r1_start != df.r2_start) | (df.r1_len != df.r2_len)]
+    df_identical = df[(df.r1_start == df.r2_start) & (df.r1_len == df.r2_len)].copy(deep=True)
+    df = df[(df.r1_start != df.r2_start) | (df.r1_len != df.r2_len)].copy(deep=True)
     df_identical['block_len'] = df_identical['r1_len']
     df_identical['block_start'] = df_identical['r1_start']
     df_identical = df_identical.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
 
     # if the block starts are the same, keep the longest block and read1 starts, and remove from main df
-    df_same_start = df[df.r1_start == df.r2_start]
-    df = df[df.r1_start != df.r2_start]
-    pool = mp.Pool(processes=nb_threads)
-    results = pool.map(apply_func, [[df_pool, select_longest] for df_pool in np.array_split(df_same_start, nb_threads)])
-    pool.close()
-    if pd.__version__ >= '0.23.0':
-        df_same_start = pd.concat(list(results), sort=False)
-    else:
-        df_same_start = pd.concat(list(results))
-    del results
-    df_same_start['block_start'] = df.r1_start
-    df_same_start = df_same_start.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
+    df_same_start = df[df.r1_start == df.r2_start].copy(deep=True)
+    df = df[df.r1_start != df.r2_start].copy(deep=True)
+    if df_same_start.empty is False:
+        pool = mp.Pool(processes=nb_threads)
+        results = pool.map(apply_func, [[df_pool, select_longest] for df_pool in np.array_split(df_same_start, nb_threads)])
+        pool.close()
+        if pd.__version__ >= '0.23.0':
+            df_same_start = pd.concat(list(results), sort=False)
+        else:
+            df_same_start = pd.concat(list(results))
+        del results
+        df_same_start['block_start'] = df.r1_start
+        df_same_start = df_same_start.drop(['r1_start','r2_start','r1_len','r2_len'], axis=1)
 
     # the remaining reads have partial exon overlap, so select and regroup the overlapping exon while keeping the ones
     # only represented by one read
@@ -131,7 +132,8 @@ def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
     cat_file = 'cat %s/%s_chromo/corrected*.bed12 > %s/corrected_%s.bed12'%(output_dir, temp_dir, output_dir, os.path.basename(output))
     x = os.system(cat_file)
     if x !=0 :
-        sys.exit('cat exit status: ' + str(x))
+        print('cat exit status: ' + str(x), file=sys.stderr)
+        sys.exit(1)
     shutil.rmtree('%s/%s_chromo/' % (output_dir, temp_dir))
     if ucsc is True:
         track_opt = "-trackline -trackopts 'name=\"%s\"'"%(os.path.basename(output))
@@ -143,7 +145,8 @@ def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
                                                                                      os.path.basename(output))
     x = os.system(genomecov)
     if x !=0 :
-        sys.exit('genomecov exit status: ' + str(x))
+        print('genomecov exit status: ' + str(x), file=sys.stderr)
+        sys.exit(1)
 
     if ucsc is True:
         with open(genomepath) as f:

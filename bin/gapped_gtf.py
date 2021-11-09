@@ -473,6 +473,9 @@ def read_gtf(gtf_file, verbose=False):
                 try:
                     res = re.search(att + '\s"([^;]+);?"' , attribute).group(1)
                 except AttributeError:
+                    if att == 'gene_id':
+                        print("Some entries are missing a gene_id. Exiting.", file=sys.stderr)
+                        sys.exit(1)
                     res = None
                 gtf_entry.append(res)
             gtf_list.append(gtf_entry)
@@ -481,6 +484,10 @@ def read_gtf(gtf_file, verbose=False):
                                    'gene_id', 'transcript_id', 'exon_number', 'gene_name',
                                    'gene_biotype', 'transcript_name', 'exon_id',
                                    'transcript_biotype', 'transcript_support_level', 'gene'])
+    if len(df_gtf[df_gtf.gene_biotype.notnull()]) == 0:
+        print('There is no "gene_biotype" in your gtf file, can\'t select genes to correct. Exiting.', file=sys.stderr)
+        sys.exit(1)
+
     df_gtf.loc[(df_gtf.gene_name.isnull()) &
                (df_gtf.gene.notnull()), 'gene_name'] = df_gtf.loc[(df_gtf.gene_name.isnull()) &
                                                                   (df_gtf.gene.notnull()), 'gene']
@@ -499,8 +506,8 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     if gtf_file.endswith('.gtf') or gtf_file.endswith('.gtf.gz'):
         print('Reading gtf')
     else:
-        print('Annotation file:',gtf_file)
-        print('error: Wrong annotation format. Only .gtf and .gtf.gz files are accepted')
+        print('Annotation file:', gtf_file, file=sys.stderr)
+        print('error: Wrong annotation format. Only .gtf and .gtf.gz files are accepted', file=sys.stderr)
         sys.exit(1)
     df_gtf = read_gtf(gtf_file, verbose)
     df_gtf.loc[(df_gtf.feature != 'gene') & (df_gtf.transcript_support_level.isnull()), 'transcript_support_level'] = '5'

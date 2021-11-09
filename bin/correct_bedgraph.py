@@ -48,17 +48,18 @@ print('output: ', output)
 x = correct_bg.prepare_bed12(bamfile, output_dir,os.path.basename(output), thread)
 temp_dir = os.path.basename(output)
 if x !=0 :
-    sys.exit('prepare_bed12 exit status: '+ str(x))
+    print('prepare_bed12 exit status: '+ str(x), file=sys.stderr)
+    sys.exit(1)
 
-filelist = os.listdir('%s/%s_chromo/'%(output_dir,temp_dir))
+filelist = os.listdir(os.path.join(output_dir, temp_dir +'_chromo'))
 
 for filename in filelist:
 
     if filename.endswith(".bed12") and 'corrected' not in filename:
         print('running chromosome: %s'%(filename.replace('.bed12','')))
-        outfile = output_dir + '/'+temp_dir+'_chromo/corrected_' + os.path.basename(filename)
+        outfile = os.path.join(output_dir, temp_dir + '_chromo', 'corrected_' + os.path.basename(filename))
 
-        for i, df_chunk in enumerate(pd.read_csv(output_dir + '/'+temp_dir+'_chromo/'+ filename, sep='\t',
+        for i, df_chunk in enumerate(pd.read_csv(os.path.join(output_dir, temp_dir + '_chromo', filename), sep='\t',
                                     names=['chromo', 'start', 'end', 'name', 'score', 'strand', 'thick_start',
                                            'thick_end','RGB', 'nb_block', 'block_len', 'block_start'],
                                     dtype={'chromo': str}, chunksize=chunk_size)):
