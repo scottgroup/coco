@@ -2,3 +2,5 @@
 *.pyc
 .idea/*
 */old/*
+*.txt
+bin/.idea/*

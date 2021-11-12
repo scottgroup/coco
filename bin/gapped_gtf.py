@@ -439,7 +439,7 @@ def check_biotypes(df_gtf,biotypes_embedded):
     biotypes_in_gtf=df_gtf['gene_biotype'].unique()
     for biotype in biotypes_embedded:
         if biotype not in biotypes_in_gtf:
-            print('Warning! gene_biotype %s is not present in the gtf.' %(biotype))
+            print('Warning! gene_biotype %s is not present in the gtf.' %(biotype), file=sys.stderr)
     if len(set(biotypes_in_gtf) & set(biotypes_embedded)) == 0:
         print('No embedded genes are present in the gtf file. No need to perform any correction.')
         return False
@@ -495,7 +495,97 @@ def read_gtf(gtf_file, verbose=False):
     return df_gtf
 
 
-def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
+def add_entry(merged_entries, d_merged, prev_seqname, prev_start, prev_end, prev_strand,
+              gene_ids, gene_names, gene_biotype, sources):
+    merged_entries.append([prev_seqname, prev_start, prev_end, prev_strand,
+                           '-'.join(gene_ids), '-'.join(gene_names), gene_biotype, '-'.join(sources)])
+    for i in gene_ids:
+        d_merged[i] = {
+            'ids': '-'.join(gene_ids),
+            'names': '-'.join(gene_names)
+        }
+    print(','.join(gene_ids), file=sys.stderr)
+    return merged_entries, d_merged
+
+def merge_overlapping_emb_genes(df_gtf, emb_biotypes, output, min_overlap):
+    # identify overlapping genes
+    df_emb = df_gtf[df_gtf.gene_biotype.isin(emb_biotypes)]
+    emb_bed = os.path.join(os.path.dirname(output), 'emb_genes.' + os.path.basename(output) + '.bed')
+    overlapping_bed = os.path.join(os.path.dirname(output), 'overlapping_emb_genes.' + os.path.basename(output) + '.bed')
+    df_emb[df_emb.feature == 'gene'][['seqname', 'start', 'end', 'gene_id', 'source', 'strand']].to_csv(emb_bed,
+                                                                             sep='\t', index=False, header=False)
+    intersect_command = "bedtools intersect -a %s -b %s -wa -wb -s -f %0.3f -r | awk ' $4 != $10' > %s" % (
+        emb_bed, emb_bed, min_overlap, overlapping_bed)
+    x = os.system(intersect_command)
+    if x != 0:
+        print("Merge overlapping embedded genes exited with : %d" % x, file=sys.stderr)
+        sys.exit(1)
+    os.remove(emb_bed)
+    d_biotypes = df_emb[['gene_id', 'gene_biotype']].set_index('gene_id').gene_biotype.to_dict()
+    d_names = df_emb[['gene_id', 'gene_name']].set_index('gene_id').gene_name.to_dict()
+    df_overlap = pd.read_csv(overlapping_bed, sep='\t',
+                             names=['seqname1', 'start1', 'end1', 'gene_id1', 'source1', 'strand1',
+                                    'seqname2', 'start2', 'end2', 'gene_id2', 'source2', 'strand2'])
+    if df_overlap.empty:
+        return df_gtf
+    df_overlap['gene_biotype1'] = df_overlap.gene_id1.map(d_biotypes)
+    df_overlap['gene_biotype2'] = df_overlap.gene_id2.map(d_biotypes)
+    df_overlap['gene_name1'] = df_overlap.gene_id1.map(d_names)
+    # only merge overlapping genes having the same gene_biotype
+    df_overlap = df_overlap[df_overlap.gene_biotype1 == df_overlap.gene_biotype2]
+    overlapping_genes = df_overlap.gene_id1.unique().tolist()
+
+    bed = df_overlap[[
+        'seqname1', 'start1', 'end1', 'gene_id1', 'strand1', 'gene_name1', 'gene_biotype1', 'source1'
+    ]].drop_duplicates().sort_values(['strand1', 'gene_biotype1', 'seqname1', 'start1', 'end1']).values
+    prev_seqname = ''
+    prev_start = -1
+    prev_end = -1
+    prev_strand = ''
+    merged_entries = []
+    d_merged = {}
+    prev_biotype = ''
+    print('Warning! The following genes were merged because they share more than %0.2f of their sequence '
+          'with respect to the -f/--fraction argument:' % min_overlap, file=sys.stderr)
+    for entry in bed:
+        seqname, start, end, gene_id, strand, gene_name, gene_biotype, source = entry
+        start = int(start)
+        end = int(end)
+        if seqname != prev_seqname or strand != prev_strand or start > prev_end or prev_biotype != gene_biotype:
+            if prev_seqname != '':
+                merged_entries, d_merged = add_entry(merged_entries, d_merged, prev_seqname, prev_start, prev_end,
+                                                     prev_strand, gene_ids, gene_names, gene_biotype, sources)
+            prev_seqname = seqname
+            prev_start = start
+            prev_end = end
+            prev_strand = strand
+            prev_biotype = gene_biotype
+            gene_ids = [gene_id]
+            gene_names = [gene_name]
+            sources = [source]
+        else:
+            prev_end = max([prev_end, end])
+            gene_ids.append(gene_id)
+            gene_names.append(gene_name)
+            if source not in sources:
+                sources.append(source)
+    merged_entries, d_merged = add_entry(merged_entries, d_merged, prev_seqname, prev_start, prev_end,
+                                         prev_strand, gene_ids, gene_names, gene_biotype, sources)
+    df_merged = pd.DataFrame(merged_entries,
+                             columns=['seqname', 'start', 'end', 'strand', 'gene_id', 'gene_name', 'gene_biotype', 'source'])
+    df_merged['feature'] = 'gene'
+    df_merged['score'] = '.'
+    # update gtf
+    df_gtf = df_gtf[~((df_gtf.gene_id.isin(overlapping_genes)) & (df_gtf.feature == 'gene'))]
+    df_gtf = df_gtf.append(df_merged, ignore_index=True)
+    for k in d_merged.keys():
+        # k = original gene_id
+        df_gtf.loc[df_gtf.gene_id == k, 'gene_name'] = d_merged[k]['names']
+        df_gtf.loc[df_gtf.gene_id == k, 'gene_id'] = d_merged[k]['ids']
+    return df_gtf
+
+
+def correct_annotation(gtf_file, output, verbose, fraction, biotypes_embedded=('snoRNA', 'scaRNA', 'tRNA', 'miRNA', 'snRNA')):
     """
     correct_annotation builds a new gtf from the one provided, with holes on exons from genes that overlap the specified embedded biotypes.
     Read the MANUAL.md for extensive description.
@@ -544,6 +634,9 @@ def correct_annotation(gtf_file, output, verbose, biotypes_embedded=('snoRNA', '
     df_gtf['exon_id'] = 'NaN'
     df_gtf.loc[df_gtf['feature']=='exon','exon_id'] = df_gtf['transcript_id'] + '.' + df_gtf['exon_number'].map(str).str.split('.').str.get(0)
     if do_corr is True:
+        if fraction != -1:
+            # merge similar overlapping annotations
+            df_gtf = merge_overlapping_emb_genes(df_gtf, biotypes_embedded, output, fraction)
         dgene=df_gtf[df_gtf.feature == 'gene']
         dgene['start']=dgene['start'].map(int)
         dgene['end']=dgene['end'].map(int)

@@ -6,28 +6,7 @@ It calls one of three other scripts: correct_annotation, correct_count or correc
 """
 __author__ = "Vincent Boivin, Gabrielle Deschamps-Francoeur, and Michelle Scott"
 __email__ = "Michelle.Scott@Usherbrooke.ca"
-__version__='0.2.8'
-# New in version 0.2.8 : Better handling of gtf files: faster and lighter reading, compatibility with RefSeq "gene" attribute,
-#                        handling of missing attributes
-# New in version 0.2.7 : Added --countReadPairs argument for featureCounts v2.0.2 and higher
-# New in version 0.2.6 : don't check dependencies before printing help
-#                        Do not correct very weird cases in coco ca
-#                        Option to keep intermediate bed12 files in coco cb
-# New in version 0.2.5p1 : adjusted samtools threads to be "Number of additional threads to use"
-# New in version 0.2.5 : compatibility with pandas 1.0
-# New in version 0.2.4 : coco runs even if there are no embedded genes in the gtf file
-# New in version 0.2.3 : cc Search repair path before running
-#                        ca Better exon numbering, handles gtf without transcript name
-# New in version 0.2.2 : cc More efficient reading of gtf file and better memory handling,
-#                        ca only shows progress bar if specified by -V option
-# New in version 0.2.1p4 : Do not perform intron correction on the embedded genes overlapping exons from different genes
-# New in version 0.2.1p3 : Multi-threading with samtools, avoid negative counts, do not consider unmapped reads in multimapped part
-# New in version 0.2.1p2 : Rename all files when input doesn't have multimapped reads and using option -c both
-# New in version 0.2.1p1 : Corrected length of monoexonic genes contained in small non-coding RNA for TPM calculation
-# new in version 0.2.1 : better sorting in correct_bedgraph, backward compatibility with python3.4 (recommended 3.5.1 or higher)
-# new in version 0.2.0 : introns correction
-# correct_annotation : creation of a second gtf file (.intron.gtf) only having the feature overlapping embedded genes
-# correct_count : added distribute_embedded_counts
+__version__ = '1.0.0'
 
 import sys
 import subprocess
