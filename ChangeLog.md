@@ -1,11 +1,11 @@
 ## CoCo 1.0.0 - 2021/11/11
 - ca: Added option `-f/--fraction` to merge overlapping embedded genes having the same biotype (probable duplicates). 
-By default, coco ca will merge genes having >=85% overlap. The minimal overlap can be set to any values between to 
+By default, coco ca will merge genes having >=85% overlap. The minimal overlap can be set to any values between 
 ]0,1] by using the `-f/--fraction` option. This feature can be disabled with `-f/--fraction -1` 
 
 ## CoCo 0.2.8
 - ca: Better handling of gtf files: faster and lighter reading, compatibility with RefSeq "gene" attribute,
-handling of missing attributes
+handling of missing attributes, accept gzipped gtf.
 
 ## CoCo 0.2.7
 - cc: Added `--countReadPairs` argument for featureCounts v2.0.2 and higher when `-p/--paired` is specified
