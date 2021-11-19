@@ -471,7 +471,7 @@ def read_gtf(gtf_file, verbose=False):
                         'exon_id', 'transcript_biotype', 'transcript_support_level', 'gene']
             for att in att_list:
                 try:
-                    res = re.search(att + '\s"([^;]+);?"' , attribute).group(1)
+                    res = re.search(att + '\s"?([^;"]+)"?;?' , attribute).group(1)
                 except AttributeError:
                     if att == 'gene_id':
                         print("Some entries are missing a gene_id. Exiting.", file=sys.stderr)
