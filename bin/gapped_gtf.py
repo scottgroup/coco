@@ -526,6 +526,7 @@ def merge_overlapping_emb_genes(df_gtf, emb_biotypes, output, min_overlap):
     df_overlap = pd.read_csv(overlapping_bed, sep='\t',
                              names=['seqname1', 'start1', 'end1', 'gene_id1', 'source1', 'strand1',
                                     'seqname2', 'start2', 'end2', 'gene_id2', 'source2', 'strand2'])
+    os.remove(overlapping_bed)
     if df_overlap.empty:
         return df_gtf
     df_overlap['gene_biotype1'] = df_overlap.gene_id1.map(d_biotypes)
