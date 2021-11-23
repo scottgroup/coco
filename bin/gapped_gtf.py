@@ -555,7 +555,7 @@ def merge_overlapping_emb_genes(df_gtf, emb_biotypes, output, min_overlap):
         if seqname != prev_seqname or strand != prev_strand or start > prev_end or prev_biotype != gene_biotype:
             if prev_seqname != '':
                 merged_entries, d_merged = add_entry(merged_entries, d_merged, prev_seqname, prev_start, prev_end,
-                                                     prev_strand, gene_ids, gene_names, gene_biotype, sources)
+                                                     prev_strand, gene_ids, gene_names, prev_biotype, sources)
             prev_seqname = seqname
             prev_start = start
             prev_end = end
@@ -571,7 +571,7 @@ def merge_overlapping_emb_genes(df_gtf, emb_biotypes, output, min_overlap):
             if source not in sources:
                 sources.append(source)
     merged_entries, d_merged = add_entry(merged_entries, d_merged, prev_seqname, prev_start, prev_end,
-                                         prev_strand, gene_ids, gene_names, gene_biotype, sources)
+                                         prev_strand, gene_ids, gene_names, prev_biotype, sources)
     df_merged = pd.DataFrame(merged_entries,
                              columns=['seqname', 'start', 'end', 'strand', 'gene_id', 'gene_name', 'gene_biotype', 'source'])
     df_merged['feature'] = 'gene'
