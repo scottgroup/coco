@@ -539,6 +539,8 @@ def merge_overlapping_emb_genes(df_gtf, emb_biotypes, output, min_overlap):
     bed = df_overlap[[
         'seqname1', 'start1', 'end1', 'gene_id1', 'strand1', 'gene_name1', 'gene_biotype1', 'source1'
     ]].drop_duplicates().sort_values(['strand1', 'gene_biotype1', 'seqname1', 'start1', 'end1']).values
+    if len(bed) == 0:
+        return df_gtf
     prev_seqname = ''
     prev_start = -1
     prev_end = -1
