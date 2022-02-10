@@ -1,12 +1,8 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-pyv="$(python3 -V 2>&1 | cut -d ' ' -f 2)"
-if [ "${pyv:0:1}" == "3" ];
-then
-    if [ "$pyv" '<' 3.5 ]; 
-        then echo 'Exiting. Please use python 3.5 or greater'; exit 1;
-        else python3 $DIR/coco.py $@;
-    fi
-else
-     echo 'Exiting. Please use python 3.5 or greater'; exit 1;
+pyv=$(python3 -V 2>&1 | cut -d ' ' -f 2)
+older=$(echo -e "3.5\n"$pyv | sort -V | head -n1)
+if [ "${older}" != "3.5" ]
+then  echo 'Exiting. Please use python 3.5 or greater. You are using python' $pyv'.'; exit 1;
+else python3 $DIR/coco.py $@;
 fi
