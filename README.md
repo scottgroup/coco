@@ -94,8 +94,8 @@ For detailed information about the usage of every run modes, please refer to the
 ## **Authors**
 
 * **Gabrielle Deschamps-Francoeur** - *Making of the multi-mapped read correction and collaborated on the correction for ambiguous reads.*
-* **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.* - [boiv2803](http://gitlabscottgroup.med.usherbrooke.ca/u/boiv2803)
-* **Michelle Scott** - *Mastermind of the project and awesome PI* - [scottgroup](http://scottgroup.med.usherbrooke.ca/)
+* **Vincent Boivin** - *Making of the annotation correction for ambiguous reads.*
+* **Michelle Scott** - *Mastermind of the project and awesome PI* - [scottgroup](https://bioinfo-scottgroup.med.usherbrooke.ca/)
 
 Questions should be directed to: _gabrielle.deschamps-francoeur@usherbrooke.ca_
 
