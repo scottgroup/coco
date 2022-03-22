@@ -25,7 +25,7 @@ Here are the tools that must be installed for CoCo to work:
 
 CoCo scripts are mostly python3, so be sure you have python3 installed and working. (tested for python 3.5)
 CoCo also uses some python3 packages:
-* [pandas] (v0.18.0 or higher)(http://pandas.pydata.org/), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
+* [pandas](http://pandas.pydata.org/) (v0.18.0 or higher), [Click here for installation guidelines](http://pandas.pydata.org/pandas-docs/stable/install.html)
 
 
 
