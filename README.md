@@ -17,9 +17,9 @@ CoCo is supported on Linux (Ubuntu, Fedora, CentOS).
 
 Here are the tools that must be installed for CoCo to work:
 
-* [Subread] (v1.5.2 or higher)(http://subread.sourceforge.net/), for the *featureCounts* function, which is used by correct_count to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
-* [BEDtools] (v.2.25.0 or higher)(http://bedtools.readthedocs.io/en/latest/), for the *intersect* function which is used by correct_annotation and for *genomecov* which is used by correct_bedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
-* [samtools] (v1.3.1 or higher)(http://samtools.sourceforge.net/), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
+* [Subread](http://subread.sourceforge.net/) (v1.5.2 or higher), for the *featureCounts* function, which is used by correct_count to produce the read counts per genes. [Click here for installation guidelines](http://bioinf.wehi.edu.au/subread-package/)
+* [BEDtools](http://bedtools.readthedocs.io/en/latest/) (v.2.25.0 or higher), for the *intersect* function which is used by correct_annotation and for *genomecov* which is used by correct_bedgraph. [Click here for installation guidelines](http://bedtools.readthedocs.io/en/latest/content/installation.html)
+* [samtools](http://samtools.sourceforge.net/) (v1.3.1 or higher), for the *view* function which is used to verify bam integrity and to get max read length. [Click here for installation guidelines](http://www.htslib.org/download/)
 * [pairedBamToBed12](https://github.com/Population-Transcriptomics/pairedBamToBed12), only required for the correct_bedgraph mode.
 
 
