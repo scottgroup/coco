@@ -37,7 +37,7 @@ First, you must clone the git repository to your favorite directory.
 
 ```
 cd /path/to/clone/
-git clone http://gitlabscottgroup.med.usherbrooke.ca/scott-group/coco.git
+git clone https://github.com/scottgroup/coco.git
 ```
 
 Next, you have to add the /bin/ path of the coco repository to your PATH environment variable.
