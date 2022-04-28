@@ -1,4 +1,4 @@
-![alt tag](ressources/CoCoLogo.PNG)
+![alt tag](resources/CoCoLogo.PNG)
 # **CoCo**: Count Corrector for embedded and multi-mapped genes.
 
 CoCo is a pipeline designed to improve the evaluated abundance of embedded and multi-mapped genes from RNA-seq alignment data. CoCo is divided in two main parts which can be used together or seperately, depending on the user's preference. The first part is a correction of the gene annotation used by read assignment softwares such as featureCounts or HTSeq in order to correct the evaluated read counts for embedded genes such as snoRNA, that overlap features of their host gene's transcripts such as retained introns and exons. The second part of the correction distributes multi mapped reads in relation to the evaluated read counts obtained from single mapped reads.
@@ -85,7 +85,7 @@ cd path/to/coco/bin/
 
 Here is how a user (you) can use the three CoCo modules to get to the desired output (whether it be the corrected gene expression values, the corrected paired-end bedgraph or both)
 
-<img src="ressources/CoCoPipeline.PNG" alt="CoCo Pipeline" style="width: 700px;"/>
+<img src="resources/CoCoPipeline.PNG" alt="CoCo Pipeline" style="width: 700px;"/>
 
 For detailed information about the usage of every run modes, please refer to the [MANUAL.md](MANUAL.md).
 

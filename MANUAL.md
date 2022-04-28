@@ -18,7 +18,7 @@ cd path/to/coco/bin/
 Here is how a user (you) can use the three CoCo modules to get to the desired output (whether it be the corrected gene 
 expression values, the corrected paired-end bedgraph or both)
 
-![alt tag](ressources/CoCoPipeline.PNG)
+![alt tag](resources/CoCoPipeline.PNG)
 
 Here's a description of what each run modes do:
 
@@ -37,7 +37,7 @@ Basic usage:
 coco correct_annotation path/to/your/annotation/hg38_annotation.gtf
 ```
 
-![alt tag](ressources/CorrectAnnotation.PNG)
+![alt tag](resources/CorrectAnnotation.PNG)
 
 The embedded gene biotypes considered by default are: snoRNA, scaRNA, snRNA, miRNA and tRNA. Biotypes considered can be 
 modified using the `-b/--biotypes` argument. Therefore, **the original annotation 
@@ -49,14 +49,14 @@ A second annotation file will be created, having the suffixe ".introns.gtf". Thi
 retained intron and exon surrounding the overlapping embedded genes. This file will be used by the `correct_count` module
 to determine whether the reads come from the host or the embedded gene. (See figure below)
 
-![alt tag](ressources/CoCo_introns.png)
+![alt tag](resources/CoCo_introns.png)
 
 Finally, `correct_annotation` merges overlapping embedded genes having the same biotype (probable duplicates in the 
 annotation). By default, `correct_annotation` will merge genes having >=85% overlap as shown below. The minimal overlap 
 can be set to any values between ]0,1] by using the `-f/--fraction` option. 
 This feature can be disabled with `-f/--fraction -1`.
  
- ![alt_tag](ressources/fraction_feature.png)  
+ ![alt_tag](resources/fraction_feature.png)  
 
 ## correct_count
 
@@ -95,4 +95,4 @@ Basic usage:
 coco correct_bedgraph <args> path/to/your/bam/alignment.bam path/to/your/output.bedgraph
 ```
 
-![alt tag](ressources/Correct_bedgraph.png)
+![alt tag](resources/Correct_bedgraph.png)
