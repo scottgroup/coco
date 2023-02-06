@@ -92,7 +92,14 @@ read abundance on the whole genome. See the figure below for a visual explanatio
 
 Basic usage:
 ```
-coco correct_bedgraph <args> path/to/your/bam/alignment.bam path/to/your/output.bedgraph
+coco correct_bedgraph <args> path/to/your/bam/alignment.bam path/to/your/output.bedgraph path/to/your/genomefile.tsv
 ```
+
+The genome file is a tab-separated file that must contain two columns, the first column is the 
+name of the chromosome written the same way as in you bam file and the second is the length of the chromosome.
+
+If you used STAR for the alignment, you can use the file `chrNameLength.txt` present in the STAR index folder. 
+Otherwise, you can find the information in your bam header using the command `samtools view -H myfile.bam | grep '@SQ'`
+and keeping only the chromosomes name and length without the prefixes SN: and LN:.
 
 ![alt tag](resources/Correct_bedgraph.png)
