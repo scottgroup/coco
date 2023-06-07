@@ -65,7 +65,7 @@ def add_pm_counts(count_file, df_gtf, bam_file, mean_insert_size=0):
     except:
         print("error: There was a problem while reading the bam file to get the max read size.\n"
               "command performed: 'samtools view %s | head -n 100000 | cut -f 10 | wc -L'\n"
-              "output obtained: %s" %(bam_file,max_read_size))
+              "output obtained: %s" %(bam_file,max_read_size), file=sys.stderr)
         sys.exit(1)
     df_gtf = get_true_length_from_gtf(df_gtf)
     # in case of monoexonic genes contained in small non-coding RNA, the exon is completely removed, so take length of

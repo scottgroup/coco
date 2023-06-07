@@ -161,7 +161,7 @@ def genome_cov(output_dir, temp_dir, output, genomepath, ucsc):
             elif v[0] == 'mawk':
                 v = v[1]
             else :
-                print('Neither GNU awk or mawk is installed. Exiting.')
+                print('Neither GNU awk or mawk is installed. Exiting.', file=sys.stderr)
                 exit(1)
             if v >= '4.1.0':
                 add_chr = "awk -i inplace 'NR == 1 { print; OFS=\"\t\" } NR > 1 {$1 = \"chr\" $1; print }' %s "%(output)

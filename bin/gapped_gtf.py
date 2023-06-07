@@ -330,7 +330,7 @@ def fetch_overlapping_intron(df_intersect, df_gtf):
     weird_list = df_weird[df_weird.gene_id_host >1].gene_id_emb.tolist()
     if len(weird_list)>0:
         print('Warning! The intron correction will not be done on the following genes because of their particular situation:\n%s'
-          %('\n'.join(weird_list)))
+          %('\n'.join(weird_list)), file=sys.stderr)
     df_final = df_final[~df_final.gene_id_emb.isin(weird_list)]
     return df_final, weird_list
 
