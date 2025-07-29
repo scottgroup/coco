@@ -15,7 +15,7 @@ def get_main_transcript(dtranscript):
     dtranscript2=dtranscript[dtranscript['gene_biotype']==dtranscript['transcript_biotype']]
     short_list = set(dtranscript2.gene_id.unique())
     gene_lost = gene_list-short_list
-    dtranscript2 = dtranscript2.append(dtranscript[dtranscript.gene_id.isin(gene_lost)])
+    dtranscript2 = pd.concat([dtranscript2, dtranscript[dtranscript.gene_id.isin(gene_lost)]])
     dtranscript2.loc[dtranscript2['source']=='ensembl_havana','source']='aa' #source with highest level of confidence.
     dtranscript2.loc[dtranscript2['source']=='havana','source']='ab' #source with second level of confidence.
     if 'transcript_support_level' in dtranscript2.columns:

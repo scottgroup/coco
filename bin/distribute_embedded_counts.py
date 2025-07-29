@@ -18,7 +18,7 @@ def correct_embedded(df_gtf, gene_file, intron_file, outfile,count_type):
     df_counts = df_counts.merge(df_gtf[['gene_id','transcript_id','gene_name']], on='transcript_id')
     df_intron = df_counts[(df_counts.transcript_id.str.contains('intron')) |
                           (df_counts.transcript_id.str.contains('.fakehost'))].copy(deep=True)
-    df_intron['reads_per_nt'] = df_intron.accumulation/df_intron.length
+    df_intron['reads_per_nt'] = df_intron['accumulation'] / df_intron['length']
     df_embedded = df_counts[~(df_counts.transcript_id.str.contains('intron')) &
                             ~(df_counts.transcript_id.str.contains('.fakehost')) &
                             ~(df_counts.transcript_id.str.contains('.contained_exon'))].copy(deep=True)
@@ -29,13 +29,13 @@ def correct_embedded(df_gtf, gene_file, intron_file, outfile,count_type):
         df_embedded = pd.concat([df_embedded, df_contained], sort=False)
     else:
         df_embedded = pd.concat([df_embedded, df_contained])
-    df_embedded['reads_per_nt'] = df_embedded.accumulation/df_embedded.length
+    df_embedded['reads_per_nt'] = df_embedded['accumulation'] / df_embedded['length']
     del df_counts
     df_intron['embedded_id'] = df_intron.transcript_id.str.split('.').str.get(0)
     df_merged = df_intron.merge(df_embedded, left_on='embedded_id', right_on='gene_id',
                                 suffixes=['_intron','_emb'])
-    df_merged['host_diff'] = 0
-    df_merged['emb_diff'] = 0
+    df_merged['host_diff'] = 0.0
+    df_merged['emb_diff'] = 0.0
     del df_intron, df_embedded
     # if the read distribution in the intron is higher than or equal to the embedded gene, the counts go to the host
     # if the embedded gene is in a spliced intron, only correct the embedded, because intron counts are not counted

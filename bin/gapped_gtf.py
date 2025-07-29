@@ -181,7 +181,9 @@ def fix_gene_and_transcript_size(df_gtf,dexon):
     return df_gtf
 
 def build_gapped_gtf(df_gtf,output):
-    df_gtf['exon_number']=df_gtf['exon_number'].fillna(value=0,axis=0).map(int).map(str)
+    df_gtf['exon_number'] = df_gtf['exon_number'].astype(float)
+    df_gtf['exon_number'] = df_gtf['exon_number'].fillna(value=0, axis=0)
+    df_gtf['exon_number'] = df_gtf['exon_number'].astype(int).astype(str)
     df_gtf.loc[df_gtf['feature'] == 'exon','feature']='zexon'   #Makes proper gtf sorting simpler
     df_gtf.loc[df_gtf['feature'] == 'gene','transcript_id']='A' #Makes proper gtf sorting simpler
     df_gtf=df_gtf.sort_values(by=['gene_id','transcript_id','feature'])
@@ -580,7 +582,7 @@ def merge_overlapping_emb_genes(df_gtf, emb_biotypes, output, min_overlap):
     df_merged['score'] = '.'
     # update gtf
     df_gtf = df_gtf[~((df_gtf.gene_id.isin(overlapping_genes)) & (df_gtf.feature == 'gene'))]
-    df_gtf = df_gtf.append(df_merged, ignore_index=True)
+    df_gtf = pd.concat([df_gtf, df_merged], ignore_index=True)
     for k in d_merged.keys():
         # k = original gene_id
         df_gtf.loc[df_gtf.gene_id == k, 'gene_name'] = d_merged[k]['names']
